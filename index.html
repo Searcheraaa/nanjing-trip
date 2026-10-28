@@ -8,12 +8,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- 高德地图安全密钥与 JS API -->
+  <!-- 1. 高德地图安全密钥配置 -->
   <script type="text/javascript">
     window._AMapSecurityConfig = {
       securityJsCode: "514a23571b3ffbf7725fb77dc7ddcca7", 
     };
   </script>
+  <!-- 2. 加载高德地图 JS API 2.0 核心与全部所需插件 -->
   <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=265a60ea1a814174cc37ffee8c260055&plugin=AMap.ToolBar,AMap.Scale,AMap.Geolocation,AMap.Transfer,AMap.Driving,AMap.PlaceSearch,AMap.AutoComplete,AMap.Geocoder"></script>
 
   <style>
@@ -36,12 +37,17 @@
           <i data-lucide="map-pin" class="w-5 h-5 text-emerald-600"></i>
           南京行程规划助手
         </h1>
-        <p class="text-xs text-slate-500 mt-0.5">电脑版工作台 · 支持实时同步</p>
+        <p id="desktop-gps-status-text" class="text-[11px] text-emerald-700 font-medium mt-0.5">默认起点：全季酒店(老门东店)</p>
       </div>
-      <button onclick="exportCurrentSpotsToCode()" title="导出代码同步到GitHub" class="px-2.5 py-1.5 bg-slate-800 active:bg-slate-900 text-white text-xs font-semibold rounded-xl flex items-center gap-1 shadow transition">
-        <i data-lucide="share" class="w-3.5 h-3.5"></i>
-        <span>导出配置</span>
-      </button>
+      <div class="flex items-center gap-1.5">
+        <button onclick="resetToDefaultSpots()" title="恢复初始推荐景点" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        </button>
+        <button onclick="exportCurrentSpotsToCode()" title="导出代码同步到GitHub" class="px-2.5 py-1.5 bg-slate-800 active:bg-slate-900 text-white text-xs font-semibold rounded-xl flex items-center gap-1 shadow transition">
+          <i data-lucide="share" class="w-3.5 h-3.5"></i>
+          <span>导出配置</span>
+        </button>
+      </div>
     </div>
 
     <!-- 电脑端搜索框与模糊推荐容器 -->
@@ -51,14 +57,14 @@
         <input 
           id="desktop-search-input" 
           type="text" 
-          placeholder="输入南京地点(如: 鸡鸣寺、老门东)..." 
+          placeholder="输入南京地点(如: 鸡鸣寺、科巷)..." 
           autocomplete="off"
           class="w-full pl-8 pr-2 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 transition"
           oninput="handleSearchInput(this.value, 'desktop-suggest-list')"
           onfocus="handleSearchInput(this.value, 'desktop-suggest-list')"
         />
         <!-- 模糊搜索下拉推荐面板 -->
-        <div id="desktop-suggest-list" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-72 overflow-y-auto p-1.5 space-y-1"></div>
+        <div id="desktop-suggest-list" class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-80 overflow-y-auto p-1.5 space-y-1"></div>
       </div>
 
       <div class="flex items-center justify-between gap-2">
@@ -68,26 +74,26 @@
         </button>
         <button onclick="getUserLocation()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 text-xs rounded-xl flex items-center gap-1 hover:bg-slate-100 transition">
           <i data-lucide="locate-fixed" class="w-3.5 h-3.5 text-emerald-600"></i>
-          <span>基准定位</span>
+          <span>刷新实时定位</span>
         </button>
       </div>
     </div>
 
     <!-- 电脑端日程过滤 -->
     <div class="p-2 border-b border-slate-100 flex gap-1 bg-slate-50/70 overflow-x-auto no-scrollbar">
-      <button onclick="filterDay('all')" class="day-filter-btn flex-1 py-1 text-xs rounded-lg font-medium bg-emerald-600 text-white shadow-sm" data-day="all">全部</button>
-      <button onclick="filterDay(1)" class="day-filter-btn flex-1 py-1 text-xs rounded-lg font-medium bg-white text-slate-600 hover:bg-slate-100" data-day="1">D1</button>
-      <button onclick="filterDay(2)" class="day-filter-btn flex-1 py-1 text-xs rounded-lg font-medium bg-white text-slate-600 hover:bg-slate-100" data-day="2">D2</button>
-      <button onclick="filterDay(3)" class="day-filter-btn flex-1 py-1 text-xs rounded-lg font-medium bg-white text-slate-600 hover:bg-slate-100" data-day="3">D3</button>
-      <button onclick="filterDay(0)" class="day-filter-btn flex-1 py-1 text-xs rounded-lg font-medium bg-white text-slate-600 hover:bg-slate-100" data-day="0">备选</button>
+      <button onclick="filterDay('all')" class="day-filter-btn flex-1 py-1.5 text-xs rounded-lg font-medium bg-emerald-600 text-white shadow-sm transition" data-day="all">全部</button>
+      <button onclick="filterDay(1)" class="day-filter-btn flex-1 py-1.5 text-xs rounded-lg font-medium bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-100 transition" data-day="1">D1</button>
+      <button onclick="filterDay(2)" class="day-filter-btn flex-1 py-1.5 text-xs rounded-lg font-medium bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-100 transition" data-day="2">D2</button>
+      <button onclick="filterDay(3)" class="day-filter-btn flex-1 py-1.5 text-xs rounded-lg font-medium bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-100 transition" data-day="3">D3</button>
+      <button onclick="filterDay(0)" class="day-filter-btn flex-1 py-1.5 text-xs rounded-lg font-medium bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-100 transition" data-day="0">备选</button>
     </div>
 
     <!-- 电脑端景点打卡列表容器 -->
-    <div id="desktop-spot-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+    <div id="desktop-spot-list" class="flex-1 overflow-y-auto p-3 space-y-2.5"></div>
 
     <div class="p-3 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between items-center">
-      <span id="desktop-spot-count">加载中...</span>
-      <span class="text-emerald-600">点击列表定位查看</span>
+      <span id="desktop-spot-count">共 0 个打卡点</span>
+      <span class="text-emerald-600">点击卡片定位 · 点路线看换乘</span>
     </div>
   </aside>
 
@@ -104,7 +110,7 @@
           <input 
             id="mobile-search-input" 
             type="text" 
-            placeholder="搜南京景点(如:鸡鸣寺、老门东)..." 
+            placeholder="搜南京景点(如:鸡鸣寺、科巷)..." 
             autocomplete="off"
             class="w-full pl-8 pr-2 py-1.5 text-xs bg-slate-50 border border-slate-200/60 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 transition"
             oninput="handleSearchInput(this.value, 'mobile-suggest-list')"
@@ -143,7 +149,7 @@
       <div class="pointer-events-auto self-start">
         <div class="bg-slate-900/85 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full shadow flex items-center gap-1.5">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          <span id="mobile-gps-status-text">未开GPS，默认基准点：新街口</span>
+          <span id="mobile-gps-status-text">默认起点：全季酒店(老门东店)</span>
         </div>
       </div>
 
@@ -157,23 +163,23 @@
     <div id="amap-container" class="w-full h-full"></div>
 
     <!-- 选点状态浮条 -->
-    <div id="add-mode-toast" class="hidden absolute top-24 md:top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-900/90 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+    <div id="add-mode-toast" class="hidden absolute top-28 md:top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-      在地图目标位置轻点即可新增打卡点
-      <button onclick="toggleAddMode()" class="ml-2 underline text-slate-300">取消</button>
+      在地图任意位置轻点，即可新增打卡点并自动测算路线
+      <button onclick="toggleAddMode()" class="ml-2 underline text-emerald-300">取消</button>
     </div>
   </main>
 
   <!-- ========================================================
        【手机端 UI】底部抽屉 (md:hidden)
   ======================================================== -->
-  <div id="bottom-drawer" class="md:hidden fixed left-0 right-0 bottom-0 z-20 bg-white/95 backdrop-blur-md rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.15)] border-t border-slate-200 transition-all duration-300 flex flex-col max-h-[75dvh] h-[220px]">
+  <div id="bottom-drawer" class="md:hidden fixed left-0 right-0 bottom-0 z-20 bg-white/95 backdrop-blur-md rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.15)] border-t border-slate-200 transition-all duration-300 flex flex-col max-h-[75dvh] h-[230px]">
     <div onclick="toggleDrawerHeight()" class="pt-2 pb-1.5 flex flex-col items-center cursor-pointer">
       <div class="w-10 h-1 bg-slate-300 rounded-full mb-1.5"></div>
       <div class="flex items-center justify-between w-full px-5 text-xs text-slate-500 font-medium">
-        <span id="mobile-spot-count-text">加载中...</span>
+        <span id="mobile-spot-count-text">共 0 个打卡点</span>
         <span class="text-emerald-600 flex items-center gap-0.5">
-          <span id="drawer-toggle-tip">上滑查看列表</span>
+          <span id="drawer-toggle-tip">上滑展开列表</span>
           <i id="drawer-toggle-icon" data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
         </span>
       </div>
@@ -183,33 +189,33 @@
   </div>
 
   <!-- ========================================================
-       自定义添加/编辑打卡点弹窗 (全新交互表单，取代丑陋 prompt)
+       自定义添加/编辑打卡点弹窗 (自动计算最短时间地铁/公交并填入)
   ======================================================== -->
   <div id="custom-add-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-5 space-y-3.5 transform transition-all border border-slate-100">
       <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-        <div>
+        <div class="min-w-0 pr-2">
           <h3 class="text-base font-bold text-slate-900 flex items-center gap-1.5">
-            <i data-lucide="map-pin-plus" class="w-5 h-5 text-emerald-600"></i>
-            加入行程攻略
+            <i data-lucide="map-pin-plus" class="w-5 h-5 text-emerald-600 flex-shrink-0"></i>
+            <span>定制打卡点攻略</span>
           </h3>
-          <p id="form-subtitle" class="text-[11px] text-slate-400 truncate max-w-[280px]">南京市详细地点</p>
+          <p id="form-subtitle" class="text-[11px] text-slate-400 truncate mt-0.5">详细地址加载中...</p>
         </div>
-        <button onclick="closeAddSpotModal()" class="p-1 rounded-full text-slate-400 hover:bg-slate-100">
+        <button onclick="closeAddSpotModal()" class="p-1.5 rounded-full text-slate-400 hover:bg-slate-100">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <div class="space-y-2.5 text-xs">
+      <div class="space-y-3 text-xs">
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">地点名称</label>
-          <input id="form-spot-name" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500" />
+          <label class="block font-semibold text-slate-700 mb-1">打卡点名称</label>
+          <input id="form-spot-name" type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 font-medium" />
         </div>
 
         <div class="flex gap-2">
           <div class="flex-1">
-            <label class="block font-semibold text-slate-700 mb-1">安排日程</label>
-            <select id="form-spot-day" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500">
+            <label class="block font-semibold text-slate-700 mb-1">安排到哪一天</label>
+            <select id="form-spot-day" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 font-medium text-emerald-700">
               <option value="1">Day 1 (钟山秦淮)</option>
               <option value="2">Day 2 (总统府民国)</option>
               <option value="3">Day 3 (玄武湖风光)</option>
@@ -217,107 +223,139 @@
             </select>
           </div>
           <div class="flex-1">
-            <label class="block font-semibold text-slate-700 mb-1">建议耗时</label>
+            <label class="block font-semibold text-slate-700 mb-1">预计游玩时长</label>
             <input id="form-spot-time" type="text" value="1.5-2小时" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500" />
           </div>
         </div>
 
+        <!-- 推荐公共交通：自动计算最短时间几号线/几路公交，支持一键清空重写 -->
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">推荐公共交通 (地铁/公交)</label>
-          <input id="form-spot-transit" type="text" placeholder="地铁/公交路线，可直接修改或清空" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500" />
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-slate-700 flex items-center gap-1">
+              <span>推荐公共交通 (按最短耗时自动生成)</span>
+            </label>
+            <button type="button" onclick="document.getElementById('form-spot-transit').value=''; document.getElementById('form-spot-transit').focus();" class="text-[11px] text-rose-500 hover:underline">
+              清空自己填
+            </button>
+          </div>
+          <textarea id="form-spot-transit" rows="2" placeholder="正在从起点测算最短时间的地铁/公交路线..." class="w-full px-3 py-2 bg-blue-50/50 border border-blue-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 text-slate-700 leading-relaxed"></textarea>
+          <p id="form-transit-hint" class="text-[10px] text-slate-400 mt-1">起点基准：全季酒店(南京老门东店)，可自由删改上方文字</p>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">攻略备忘 & 小吃提示</label>
-          <textarea id="form-spot-tip" rows="2" placeholder="填写必拍机位、预约提醒、必吃小吃等..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500"></textarea>
+          <label class="block font-semibold text-slate-700 mb-1">攻略简短信息 & 避坑备注</label>
+          <textarea id="form-spot-tip" rows="2" placeholder="填写必拍机位、预约提醒、必吃美食等..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 leading-relaxed"></textarea>
         </div>
 
         <div class="flex gap-2">
           <div class="flex-1">
-            <label class="block font-semibold text-slate-700 mb-1">门票费用</label>
+            <label class="block font-semibold text-slate-700 mb-1">门票/人均费用</label>
             <input id="form-spot-cost" type="text" value="免费" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500" />
           </div>
           <div class="flex-1">
             <label class="block font-semibold text-slate-700 mb-1">分类标签</label>
-            <input id="form-spot-cat" type="text" value="自定义打卡" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500" />
+            <input id="form-spot-cat" type="text" value="景点打卡" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500" />
           </div>
         </div>
       </div>
 
       <div class="pt-2 flex gap-2">
-        <button onclick="closeAddSpotModal()" class="flex-1 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">取消</button>
-        <button onclick="submitSaveNewSpot()" class="flex-1 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition">保存加入行程</button>
+        <button onclick="closeAddSpotModal()" class="flex-1 py-2.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">取消</button>
+        <button onclick="submitSaveNewSpot()" class="flex-1 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition">确认加入行程</button>
       </div>
     </div>
   </div>
 
   <!-- ========================================================
-       通用路线导航面板 (带 5 秒超时保护与降级高德 App 唤起)
+       路线导航弹窗 (展示具体地铁/公交几号线、多少站、打车时间)
   ======================================================== -->
-  <div id="nav-modal" class="fixed inset-x-0 bottom-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[480px] z-40 bg-white rounded-t-3xl md:rounded-3xl shadow-2xl border border-slate-200 transform translate-y-full md:translate-y-0 md:hidden transition-transform duration-300 max-h-[75dvh] flex flex-col safe-bottom">
-    <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
+  <div id="nav-modal" class="fixed inset-x-0 bottom-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[480px] z-40 bg-white rounded-t-3xl md:rounded-3xl shadow-2xl border border-slate-200 hidden flex-col max-h-[78dvh] safe-bottom">
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 rounded-t-3xl">
       <div class="min-w-0 pr-2">
         <div class="flex items-center gap-1.5 text-emerald-700 font-bold text-sm truncate">
           <i data-lucide="navigation" class="w-4 h-4 flex-shrink-0"></i>
-          <span id="nav-target-title" class="truncate">路线规划</span>
+          <span id="nav-target-title" class="truncate">前往目的地</span>
         </div>
-        <p id="nav-origin-text" class="text-[11px] text-slate-500 truncate mt-0.5">起点：南京新街口</p>
+        <p id="nav-origin-text" class="text-[11px] text-slate-500 truncate mt-0.5">起点：全季酒店(南京老门东店)</p>
       </div>
-      <button onclick="closeNavModal()" class="p-1 rounded-full bg-slate-200/60 active:bg-slate-300 text-slate-600">
+      <button onclick="closeNavModal()" class="p-1.5 rounded-full bg-slate-200/70 hover:bg-slate-300 text-slate-600">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
 
     <div class="px-4 pt-3 flex gap-2">
-      <button id="nav-tab-transit" onclick="switchNavMode('transit')" class="flex-1 py-1.5 text-xs font-semibold rounded-xl bg-emerald-600 text-white flex items-center justify-center gap-1.5 shadow-sm">
-        <i data-lucide="bus" class="w-3.5 h-3.5"></i> 公共交通 (地铁/公交)
+      <button id="nav-tab-transit" onclick="switchNavMode('transit')" class="flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white flex items-center justify-center gap-1.5 shadow-sm transition">
+        <i data-lucide="bus" class="w-3.5 h-3.5"></i> 公共交通 (最快地铁/公交)
       </button>
-      <button id="nav-tab-drive" onclick="switchNavMode('drive')" class="flex-1 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center gap-1.5">
-        <i data-lucide="car" class="w-3.5 h-3.5"></i> 打车 / 自驾
+      <button id="nav-tab-drive" onclick="switchNavMode('drive')" class="flex-1 py-2 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center gap-1.5 transition">
+        <i data-lucide="car" class="w-3.5 h-3.5"></i> 打车前往时间
       </button>
     </div>
 
-    <div id="nav-route-details" class="flex-1 overflow-y-auto p-4 space-y-2 text-xs">
-      <div class="text-center py-6 text-slate-400">正在计算推荐路线...</div>
-    </div>
+    <div id="nav-route-details" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs"></div>
   </div>
 
   <!-- ========================================================
-       核心 JavaScript
+       核心 JavaScript 业务逻辑
   ======================================================== -->
   <script>
+    // 1. 默认起点固定为：全季酒店(南京夫子庙老门东店) - 秦淮区箍桶巷
+    const DEFAULT_HOTEL = {
+      lng: 118.78655,
+      lat: 32.01352,
+      isRealGps: false,
+      name: "全季酒店(南京老门东店)"
+    };
+
+    let userLocation = { ...DEFAULT_HOTEL };
+
+    // 2. 初始南京热门景点数据（基于从全季老门东店出发的真实地铁/公交时间）
     const DEFAULT_SPOTS = [
-      { id: 1, name: "钟山风景区·中山陵", category: "名胜", lng: 118.84888, lat: 32.06173, day: 1, timeNeeded: "2.5小时", transit: "地铁2号线苜蓿园/下马坊站换乘景区观光车", tip: "需要提前在微信公众号实名预约。登台阶约392级。", cost: "陵寝免费(套票100)" },
-      { id: 2, name: "夫子庙与秦淮风光带", category: "文化/夜景", lng: 118.78854, lat: 32.01956, day: 1, timeNeeded: "2小时", transit: "地铁3号线夫子庙站2号口步行300米", tip: "建议傍晚落日后来，夜泊秦淮游船极有氛围。品尝鸭血粉丝汤。", cost: "街区免费" },
-      { id: 3, name: "南京总统府", category: "历史", lng: 118.79815, lat: 32.04389, day: 2, timeNeeded: "2小时", transit: "地铁2/3号线大行宫站5号口直达", tip: "周一闭馆！融合中西建筑与江南园林，建议听语音讲解。", cost: "35元" },
-      { id: 4, name: "颐和路民国公馆区", category: "街区/拍照", lng: 118.76182, lat: 32.06282, day: 2, timeNeeded: "1.5小时", transit: "公交318路颐和路站 / 地铁4号线云南路站步行", tip: "“一条颐和路，半部民国史”。秋季黄叶掩映下的黄墙格外适合人像摄影。", cost: "免费" },
-      { id: 5, name: "玄武湖公园", category: "自然湖泊", lng: 118.79848, lat: 32.07222, day: 3, timeNeeded: "2-3小时", transit: "地铁1号线玄武门站3号口直通", tip: "可以租电动船游湖，或登上古城墙远眺紫金山与玄武湖全景。", cost: "公园免费" },
-      { id: 6, name: "牛首山文化旅游区", category: "建筑瑰宝", lng: 118.75012, lat: 31.91485, day: 0, timeNeeded: "半天", transit: "地铁S1号线至佛城西路站打车10分钟", tip: "佛顶宫建筑极其壮观震撼。距离市区稍远，适合单独半天游览。", cost: "145元" }
+      { id: 1, name: "老门东历史文化街区", category: "街区/美食", lng: 118.78795, lat: 32.01215, day: 1, timeNeeded: "2小时", transit: "从全季酒店步行约 3 分钟 (220米) 即达", tip: "就在酒店旁边！推荐蒋有记锅贴、陆氏梅花糕、蓝老大糖粥藕，德云社也在街区内。", cost: "免费" },
+      { id: 2, name: "夫子庙与秦淮风光带", category: "文化/夜景", lng: 118.78854, lat: 32.01956, day: 1, timeNeeded: "2小时", transit: "最快约 12 分钟：沿箍桶巷向北步行约 850 米直达 / 或乘公交 23路/46路 (1站)", tip: "傍晚亮灯后最美，文德桥是拍秦淮河画舫的绝佳机位。", cost: "街区免费" },
+      { id: 3, name: "钟山风景区·中山陵", category: "名胜古迹", lng: 118.84888, lat: 32.06173, day: 1, timeNeeded: "3小时", transit: "最快约 48 分钟：地铁3号线(武定门上→大行宫换乘, 2站) ➔ 地铁2号线(大行宫→下马坊站, 5站) ➔ 换景区观光车", tip: "需提前在公号预约。392级台阶，登顶可俯瞰南京城林海。", cost: "免费(观光车10元)" },
+      { id: 4, name: "南京总统府", category: "民国历史", lng: 118.79815, lat: 32.04389, day: 2, timeNeeded: "2.5小时", transit: "最快约 22 分钟：地铁3号线 (武定门站上 ➔ 大行宫站下, 仅2站，约6分钟) + 步行400米", tip: "周一闭馆！中西合璧的近现代建筑群，建议早点去避开人流。", cost: "35元" },
+      { id: 5, name: "南京博物院", category: "顶级展馆", lng: 118.82421, lat: 32.04056, day: 2, timeNeeded: "3小时", transit: "最快约 32 分钟：地铁3号线(武定门→大行宫) 换乘 地铁2号线(大行宫→明故宫站, 2站)", tip: "必看民国馆、数字馆和历史馆镇馆之宝，务必提前7天在小程序预约！", cost: "免费(需预约)" },
+      { id: 6, name: "古鸡鸣寺", category: "祈福圣地", lng: 118.79862, lat: 32.06019, day: 3, timeNeeded: "1.5小时", transit: "最快约 26 分钟：地铁3号线 (武定门站上 ➔ 鸡鸣寺站下, 4站直达，车程约10分钟)", tip: "门票含三炷香，单向游览不走回头路，出口直接连着明城墙和玄武湖。", cost: "10元" },
+      { id: 7, name: "玄武湖公园", category: "自然湖泊", lng: 118.79848, lat: 32.07222, day: 3, timeNeeded: "2.5小时", transit: "最快约 28 分钟：地铁3号线(鸡鸣寺或南京站下) / 从鸡鸣寺后门解放门步行5分钟即达", tip: "江南最大城内公园，可租电动船泛舟湖上，远眺紫金山。", cost: "公园免费" },
+      { id: 8, name: "牛首山文化旅游区", category: "建筑瑰宝", lng: 118.75012, lat: 31.91485, day: 0, timeNeeded: "半天", transit: "最快约 52 分钟：地铁3号线(武定门→天元西路, 7站) 换乘 公交G70路 / 打车约 28 分钟", tip: "佛顶宫极其震撼出片，距离老门东约13公里，适合时间充裕时前往。", cost: "145元" }
     ];
 
+    // 本地缓存读取（升级缓存 Key 确保干净生效）
+    const STORAGE_KEY = 'nanjing_trip_spots_v3';
+
     function loadSavedSpots() {
-      const saved = localStorage.getItem('my_nanjing_trip_local_cache');
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        try { return JSON.parse(saved); } catch(e) { console.error(e); }
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch(e) { console.error(e); }
       }
-      return DEFAULT_SPOTS;
+      return [...DEFAULT_SPOTS];
     }
 
     function saveSpotsToStorage() {
-      localStorage.setItem('my_nanjing_trip_local_cache', JSON.stringify(spots));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(spots));
+    }
+
+    function resetToDefaultSpots() {
+      if (confirm("确定恢复为初始推荐的 8 个南京经典打卡点吗？（当前自定义修改将被重置）")) {
+        spots = [...DEFAULT_SPOTS];
+        saveSpotsToStorage();
+        render();
+      }
     }
 
     let spots = loadSavedSpots();
     let currentDayFilter = 'all';
-    let userLocation = { lng: 118.78411, lat: 32.04162, isRealGps: false, name: "南京新街口 (基准点)" };
     let map = null, markers = [], polyline = null, currentInfoWindow = null;
     let isAddMode = false;
     let activeNavSpot = null;
     let activeNavMode = 'transit';
-    let transferService = null, drivingService = null;
-    let autoDataService = null;
+    let transferService = null, drivingService = null, autoCompleteService = null, placeSearchService = null, geocoderService = null;
     let isDrawerExpanded = false;
-    let pendingSpotDraft = null; // 当前正在编辑准备保存的新点
+    let pendingSpotDraft = null;
 
     const DAY_CONFIG = {
       1: { color: "#2563eb", name: "D1 钟山秦淮", badge: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -326,24 +364,43 @@
       0: { color: "#64748b", name: "备选打卡", badge: "bg-slate-50 text-slate-600 border-slate-200" }
     };
 
+    // ==========================================
+    // 3. 地图与高德服务安全初始化
+    // ==========================================
     function initMap() {
+      // 无论地图服务状态如何，先把左侧/底部列表渲染出来，绝不白屏！
+      renderLists(spots);
+
+      if (typeof AMap === 'undefined') {
+        alert("高德地图脚本未加载成功，请检查网络连接");
+        return;
+      }
+
       map = new AMap.Map('amap-container', {
-        zoom: 12,
-        center: [118.796, 32.045],
+        zoom: 13,
+        center: [118.795, 32.035],
         viewMode: '2D'
       });
 
-      // 核心修复：纯数据模式（不直接挂载 map），避免图层冲突死锁
-      transferService = new AMap.Transfer({ city: '南京市', policy: AMap.TransferPolicy.LEAST_TIME });
-      drivingService = new AMap.Driving({ city: '南京市' });
-      autoDataService = new AMap.AutoComplete({ city: '南京市' });
+      // 绘制默认酒店起点特殊标记
+      renderHotelOriginMarker();
+
+      // 使用 AMap.plugin 确保所有路线规划与搜索插件 100% 加载完毕后再实例化
+      AMap.plugin(['AMap.Transfer', 'AMap.Driving', 'AMap.AutoComplete', 'AMap.PlaceSearch', 'AMap.Geocoder', 'AMap.Geolocation'], function() {
+        // 默认策略即为 LEAST_TIME（最快捷模式），不传枚举防止未定义报错
+        transferService = new AMap.Transfer({ city: '南京市', nightflag: true });
+        drivingService = new AMap.Driving({ city: '南京市' });
+        autoCompleteService = new AMap.AutoComplete({ city: '南京市', citylimit: true });
+        placeSearchService = new AMap.PlaceSearch({ city: '南京市', citylimit: true });
+        geocoderService = new AMap.Geocoder({ city: '南京市' });
+      });
 
       map.on('click', function(e) {
         if (!isAddMode) return;
         handleMapPick(e.lnglat.getLng(), e.lnglat.getLat());
       });
 
-      // 点击外部关闭搜索推荐下拉
+      // 点击空白处收起下拉建议框
       document.addEventListener('click', function(e) {
         if (!e.target.closest('#desktop-search-input') && !e.target.closest('#desktop-suggest-list')) {
           document.getElementById('desktop-suggest-list').classList.add('hidden');
@@ -356,22 +413,54 @@
       render();
     }
 
+    // 在地图上标出“全季酒店(老门东店)”基准起点
+    let originMarker = null;
+    function renderHotelOriginMarker() {
+      if (!map) return;
+      if (originMarker) map.remove(originMarker);
+
+      const el = document.createElement('div');
+      el.className = 'relative flex items-center justify-center';
+      el.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-rose-600 border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-[11px]">
+          起点
+        </div>
+        <div class="absolute -bottom-5 bg-rose-700 text-white text-[10px] px-1.5 py-0.5 rounded shadow whitespace-nowrap font-medium">
+          ${userLocation.name}
+        </div>
+      `;
+      originMarker = new AMap.Marker({
+        position: [userLocation.lng, userLocation.lat],
+        content: el,
+        offset: new AMap.Pixel(-16, -16),
+        zIndex: 120
+      });
+      map.add(originMarker);
+    }
+
+    // ==========================================
+    // 4. 渲染地图标注、轨迹线与双端列表
+    // ==========================================
     function render() {
+      const filtered = spots.filter(s => currentDayFilter === 'all' || String(s.day) === String(currentDayFilter));
+
+      // 先更新左右列表
+      renderLists(filtered);
+
+      if (!map) return;
       if (markers.length > 0) { map.remove(markers); markers = []; }
       if (polyline) { map.remove(polyline); polyline = null; }
-
-      const filtered = spots.filter(s => currentDayFilter === 'all' || s.day == currentDayFilter);
 
       filtered.forEach(s => {
         const conf = DAY_CONFIG[s.day] || DAY_CONFIG[0];
         const markerEl = document.createElement('div');
-        markerEl.className = 'relative flex items-center justify-center cursor-pointer';
+        markerEl.className = 'relative flex items-center justify-center cursor-pointer transition transform hover:scale-110';
         markerEl.innerHTML = `
           <div style="background-color: ${conf.color}" class="w-7 h-7 rounded-full shadow-lg border-2 border-white text-white font-bold text-xs flex items-center justify-center">
             ${s.day ? 'D'+s.day : '★'}
           </div>
-          <div class="absolute -bottom-4 bg-slate-900/80 text-white text-[9px] px-1 rounded whitespace-nowrap pointer-events-none">
-            ${s.name.split('·')[0].slice(0, 5)}
+          <div class="absolute -bottom-4 bg-slate-900/85 text-white text-[10px] px-1.5 py-0.2 rounded shadow whitespace-nowrap pointer-events-none">
+            ${s.name.split('·')[0].slice(0, 6)}
           </div>
         `;
         const marker = new AMap.Marker({
@@ -384,32 +473,35 @@
       });
       map.add(markers);
 
-      if (currentDayFilter !== 'all' && currentDayFilter !== '0' && filtered.length > 1) {
+      // 当切换到具体某一天时，绘制从全季酒店出发串联各景点的虚线
+      if (currentDayFilter !== 'all' && String(currentDayFilter) !== '0' && filtered.length > 0) {
+        const pathCoords = [[userLocation.lng, userLocation.lat], ...filtered.map(s => [s.lng, s.lat])];
         polyline = new AMap.Polyline({
-          path: filtered.map(s => [s.lng, s.lat]),
+          path: pathCoords,
           strokeColor: DAY_CONFIG[currentDayFilter].color,
           strokeWeight: 4,
-          strokeOpacity: 0.8,
+          strokeOpacity: 0.85,
           strokeStyle: 'dashed',
-          strokeDasharray: [8, 5]
+          strokeDasharray: [10, 6],
+          isOutline: true,
+          outlineColor: '#ffffff',
+          borderWeight: 1.5
         });
         map.add(polyline);
       }
-
-      renderLists(filtered);
     }
 
     function renderLists(filtered) {
       const desktopList = document.getElementById('desktop-spot-list');
       const desktopCount = document.getElementById('desktop-spot-count');
-      if (desktopCount) desktopCount.innerText = `当前显示 ${filtered.length} / 共 ${spots.length} 个`;
+      if (desktopCount) desktopCount.innerText = `当前显示 ${filtered.length} / 共 ${spots.length} 个打卡点`;
 
       const mobileList = document.getElementById('mobile-spot-list');
       const mobileCount = document.getElementById('mobile-spot-count-text');
-      if (mobileCount) mobileCount.innerText = `共 ${filtered.length} 个打卡点`;
+      if (mobileCount) mobileCount.innerText = `当前日程共 ${filtered.length} 个打卡点`;
 
       if (filtered.length === 0) {
-        const emptyHtml = `<div class="text-center py-6 text-slate-400 text-xs">该日程下无打卡点，点击“选点”添加</div>`;
+        const emptyHtml = `<div class="text-center py-8 text-slate-400 text-xs">该日程下暂无打卡点，可在上方搜索或点击“地图选点”添加</div>`;
         if (desktopList) desktopList.innerHTML = emptyHtml;
         if (mobileList) mobileList.innerHTML = emptyHtml;
         return;
@@ -418,17 +510,22 @@
       const itemsHtml = filtered.map(s => {
         const conf = DAY_CONFIG[s.day] || DAY_CONFIG[0];
         return `
-          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-2 hover:bg-slate-100 cursor-pointer transition" onclick="focusSpot(${s.id})">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5 mb-1">
-                <span class="font-bold text-xs text-slate-900 truncate">${s.name}</span>
-                <span class="text-[9px] px-1.5 py-0.2 rounded border ${conf.badge} flex-shrink-0">${conf.name}</span>
+          <div class="p-3 bg-white border border-slate-200/90 rounded-2xl shadow-sm hover:border-emerald-400 transition cursor-pointer" onclick="focusSpot(${s.id})">
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-xs text-slate-900 truncate">${s.name}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded border ${conf.badge} font-semibold flex-shrink-0">${conf.name}</span>
+                </div>
+                <p class="text-[11px] text-slate-500 line-clamp-1 mt-1">💡 ${s.tip}</p>
               </div>
-              <p class="text-[11px] text-slate-500 truncate">${s.tip}</p>
+              <button onclick="event.stopPropagation(); startNavigationTo(${s.id})" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1 flex-shrink-0 shadow-sm">
+                <i data-lucide="navigation" class="w-3 h-3"></i> 路线
+              </button>
             </div>
-            <button onclick="event.stopPropagation(); startNavigationTo(${s.id})" class="px-2.5 py-1.5 bg-emerald-600 active:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1 flex-shrink-0 shadow-sm">
-              <i data-lucide="navigation" class="w-3 h-3"></i> 路线
-            </button>
+            <div class="text-[11px] text-blue-700 bg-blue-50/70 px-2 py-1 rounded-lg truncate">
+              🚇 ${s.transit || '点击路线查看实时换乘'}
+            </div>
           </div>
         `;
       }).join('');
@@ -438,39 +535,40 @@
       lucide.createIcons();
     }
 
+    // 地图弹窗卡片
     function openSpotPopup(spot) {
       if (currentInfoWindow) currentInfoWindow.close();
       const conf = DAY_CONFIG[spot.day] || DAY_CONFIG[0];
 
       const content = `
-        <div class="w-72 bg-white p-3 text-xs">
+        <div class="w-72 bg-white p-3.5 text-xs">
           <div class="flex items-start justify-between mb-1.5">
-            <div>
+            <div class="pr-2">
               <h4 class="font-bold text-slate-900 text-sm leading-tight">${spot.name}</h4>
-              <span class="text-[10px] text-slate-400">${spot.category} · 门票: ${spot.cost}</span>
+              <span class="text-[10px] text-slate-400">${spot.category} · 耗时: ${spot.timeNeeded} · 门票: ${spot.cost}</span>
             </div>
-            <span class="text-[10px] px-1.5 py-0.5 rounded border ${conf.badge}">${conf.name}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded border ${conf.badge} flex-shrink-0">${conf.name}</span>
           </div>
 
-          <p class="text-slate-600 bg-amber-50/70 p-2 rounded-lg text-[11px] mb-2 leading-relaxed">
-            💡 ${spot.tip}
-          </p>
+          <div class="text-slate-700 bg-amber-50/80 p-2 rounded-xl text-[11px] mb-2 leading-relaxed border border-amber-100">
+            <b>💡 攻略：</b>${spot.tip}
+          </div>
 
-          <p class="text-slate-500 bg-blue-50/60 p-2 rounded-lg text-[10px] mb-2 leading-relaxed">
-            🚌 推荐交通: ${spot.transit}
-          </p>
+          <div class="text-blue-800 bg-blue-50/80 p-2 rounded-xl text-[11px] mb-2.5 leading-relaxed border border-blue-100">
+            <b>🚇 交通：</b>${spot.transit}
+          </div>
 
           <div class="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-            <select onchange="updateSpotDay(${spot.id}, this.value)" class="text-[11px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1">
-              <option value="1" ${spot.day==1?'selected':''}>排到 D1</option>
-              <option value="2" ${spot.day==2?'selected':''}>排到 D2</option>
-              <option value="3" ${spot.day==3?'selected':''}>排到 D3</option>
+            <select onchange="updateSpotDay(${spot.id}, this.value)" class="text-[11px] bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 font-medium">
+              <option value="1" ${spot.day==1?'selected':''}>排到 Day 1</option>
+              <option value="2" ${spot.day==2?'selected':''}>排到 Day 2</option>
+              <option value="3" ${spot.day==3?'selected':''}>排到 Day 3</option>
               <option value="0" ${spot.day==0?'selected':''}>移入备选</option>
             </select>
             <div class="flex gap-1.5">
-              <button onclick="deleteSpot(${spot.id})" class="text-rose-500 text-[11px] px-2 py-1">删除</button>
-              <button onclick="startNavigationTo(${spot.id})" class="bg-emerald-600 text-white px-3 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1">
-                <i data-lucide="navigation" class="w-3 h-3"></i> 导航
+              <button onclick="deleteSpot(${spot.id})" class="text-rose-500 hover:bg-rose-50 rounded-lg text-[11px] px-2 py-1">删除</button>
+              <button onclick="startNavigationTo(${spot.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow-sm">
+                <i data-lucide="navigation" class="w-3 h-3"></i> 实时路线
               </button>
             </div>
           </div>
@@ -486,9 +584,36 @@
     }
 
     // ==========================================
-    // 模糊搜索与地点推荐下拉实现
+    // 5. 核心功能：从起点自动测算最短时间公交/地铁文本
+    // ==========================================
+    function formatBestTransitSummary(plan) {
+      const totalMin = Math.max(1, Math.round(plan.time / 60));
+      const segmentsDesc = [];
+
+      if (plan.segments && plan.segments.length > 0) {
+        plan.segments.forEach(seg => {
+          if ((seg.transit_mode === 'SUBWAY' || seg.transit_mode === 'BUS') && seg.transit && seg.transit.lines && seg.transit.lines[0]) {
+            const line = seg.transit.lines[0];
+            const cleanLineName = line.name.split('(')[0];
+            const segMin = line.stime ? Math.round(line.stime / 60) : Math.max(3, line.via_num * 3);
+            segmentsDesc.push(`${cleanLineName} (${line.departure_stop.name}→${line.arrival_stop.name}, ${line.via_num}站/约${segMin}分)`);
+          }
+        });
+      }
+
+      if (segmentsDesc.length > 0) {
+        return `最快约 ${totalMin} 分钟：乘 ${segmentsDesc.join(' ➔ 换乘 ')}，总步行 ${plan.walking_distance} 米`;
+      } else {
+        return `距离较近，从起点直接步行约 ${plan.walking_distance} 米 (约 ${totalMin} 分钟)`;
+      }
+    }
+
+    // ==========================================
+    // 6. 搜索地点模糊下拉（含详细地址 + 右侧添加按钮）
     // ==========================================
     let searchTimer = null;
+    let cachedPois = [];
+
     function handleSearchInput(keyword, listContainerId) {
       const container = document.getElementById(listContainerId);
       const text = keyword.trim();
@@ -499,88 +624,95 @@
 
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
-        if (!autoDataService) return;
-        autoDataService.search(text, function(status, result) {
-          if (status === 'complete' && result.tips && result.tips.length > 0) {
-            // 过滤有效经纬度的地点
-            const validTips = result.tips.filter(item => item.location && item.location.lng);
-            if (validTips.length === 0) {
-              container.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">暂未搜到明确地址，请补充关键词</div>`;
-              container.classList.remove('hidden');
-              return;
-            }
-
-            container.innerHTML = validTips.map((tip, idx) => `
-              <div class="p-2 hover:bg-slate-50 rounded-xl flex items-center justify-between gap-2 border-b border-slate-50 last:border-none transition">
-                <div class="min-w-0 flex-1 cursor-pointer" onclick="previewSearchLocation(${tip.location.lng}, ${tip.location.lat}, '${tip.name}')">
-                  <div class="font-bold text-xs text-slate-800 truncate">${tip.name}</div>
-                  <div class="text-[10px] text-slate-400 truncate mt-0.5">${tip.district || ''}${tip.address || '南京市'}</div>
+        if (!placeSearchService) return;
+        // 使用 PlaceSearch 获取带精确经纬度与详细地址的 POI 列表
+        placeSearchService.search(text, function(status, result) {
+          if (status === 'complete' && result.poiList && result.poiList.pois && result.poiList.pois.length > 0) {
+            cachedPois = result.poiList.pois;
+            container.innerHTML = cachedPois.map((poi, idx) => {
+              const fullAddress = `${poi.adname || ''}${poi.address || '南京市'}`;
+              return `
+                <div class="p-2 hover:bg-slate-50 rounded-xl flex items-center justify-between gap-2 border-b border-slate-100 last:border-none transition">
+                  <div class="min-w-0 flex-1 cursor-pointer" onclick="previewSearchLocation(${idx})">
+                    <div class="font-bold text-xs text-slate-900 truncate">${poi.name}</div>
+                    <div class="text-[11px] text-slate-500 truncate mt-0.5">📍 ${fullAddress}</div>
+                  </div>
+                  <button onclick="openAddModalByPoiIndex(${idx})" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex-shrink-0 flex items-center gap-1 shadow-sm">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> 添加
+                  </button>
                 </div>
-                <button onclick="openAddSpotModalFromPOI('${escape(JSON.stringify(tip))}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-xs font-semibold flex-shrink-0 flex items-center gap-1 shadow-sm">
-                  <i data-lucide="plus" class="w-3 h-3"></i> 添加
-                </button>
-              </div>
-            `).join('');
-
+              `;
+            }).join('');
             container.classList.remove('hidden');
             lucide.createIcons();
           } else {
-            container.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">未找到相关地点</div>`;
+            container.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">未找到匹配的南京地点，请换个关键词</div>`;
             container.classList.remove('hidden');
           }
         });
       }, 250);
     }
 
-    function previewSearchLocation(lng, lat, name) {
-      map.setZoomAndCenter(15, [lng, lat]);
-      // 关闭推荐下拉
+    function previewSearchLocation(idx) {
+      const poi = cachedPois[idx];
+      if (!poi || !poi.location) return;
+      map.setZoomAndCenter(16, [poi.location.lng, poi.location.lat]);
       document.getElementById('desktop-suggest-list').classList.add('hidden');
       document.getElementById('mobile-suggest-list').classList.add('hidden');
     }
 
-    // ==========================================
-    // 结构化弹窗：配置并加入行程
-    // ==========================================
-    function openAddSpotModalFromPOI(escapedData) {
-      const poi = JSON.parse(unescape(escapedData));
+    function openAddModalByPoiIndex(idx) {
+      const poi = cachedPois[idx];
+      if (!poi || !poi.location) return;
+
       document.getElementById('desktop-suggest-list').classList.add('hidden');
       document.getElementById('mobile-suggest-list').classList.add('hidden');
 
-      const fullAddr = `${poi.district || ''}${poi.address || ''}`;
-      pendingSpotDraft = {
+      const fullAddress = `${poi.adname || ''}${poi.address || ''}`;
+      triggerAddSpotModal({
         name: poi.name,
         lng: poi.location.lng,
         lat: poi.location.lat,
-        address: fullAddr || "南京市",
-        category: poi.type ? poi.type.split(';')[0] : "景点/打卡"
-      };
+        address: fullAddress || "南京市",
+        category: poi.type ? poi.type.split(';')[0] : "景点打卡"
+      });
+    }
 
-      document.getElementById('form-spot-name').value = poi.name;
-      document.getElementById('form-subtitle').innerText = pendingSpotDraft.address;
-      document.getElementById('form-spot-day').value = (currentDayFilter === 'all' || currentDayFilter === '0') ? '1' : currentDayFilter;
+    // 打开添加打卡点弹窗，并实时测算从起点出发的最短公共交通路线
+    function triggerAddSpotModal(draft) {
+      pendingSpotDraft = draft;
+
+      document.getElementById('form-spot-name').value = draft.name;
+      document.getElementById('form-subtitle').innerText = `详细地址：${draft.address}`;
+      document.getElementById('form-spot-day').value = (currentDayFilter === 'all' || String(currentDayFilter) === '0') ? '1' : String(currentDayFilter);
       document.getElementById('form-spot-time').value = "1.5-2小时";
       document.getElementById('form-spot-cost').value = "免费";
-      document.getElementById('form-spot-cat').value = pendingSpotDraft.category;
-      document.getElementById('form-spot-tip').value = "推荐打卡机位，提前留意开放时间。";
-      document.getElementById('form-spot-transit').value = fullAddr ? `前往${fullAddr}` : "地铁或打车前往";
-
-      // 异步预估公共交通
-      transferService.search([userLocation.lng, userLocation.lat], [poi.location.lng, poi.location.lat], function(status, res) {
-        if (status === 'complete' && res.plans && res.plans[0]) {
-          const lines = [];
-          res.plans[0].segments.forEach(seg => {
-            if (seg.transit && seg.transit.lines && seg.transit.lines[0]) {
-              lines.push(seg.transit.lines[0].name.split('(')[0]);
-            }
-          });
-          if (lines.length > 0) {
-            document.getElementById('form-spot-transit').value = `乘 ${lines.join(' 换乘 ')} 直达附近`;
-          }
-        }
-      });
+      document.getElementById('form-spot-cat').value = draft.category;
+      document.getElementById('form-spot-tip').value = `地址位于${draft.address}，推荐打卡。`;
+      
+      const transitInput = document.getElementById('form-spot-transit');
+      const transitHint = document.getElementById('form-transit-hint');
+      transitInput.value = "正在从起点测算最短时间的地铁/公交方案...";
+      transitHint.innerText = `当前测算起点：${userLocation.name} (按最短耗时优选)`;
 
       document.getElementById('custom-add-modal').classList.remove('hidden');
+      lucide.createIcons();
+
+      // 立即调用高德公交规划，按最短时间选出最优方案填入
+      if (transferService) {
+        transferService.search([userLocation.lng, userLocation.lat], [draft.lng, draft.lat], function(status, res) {
+          if (status === 'complete' && res.plans && res.plans.length > 0) {
+            // 按时间升序排序，确保绝对取最短耗时方案
+            const sortedPlans = [...res.plans].sort((a, b) => a.time - b.time);
+            const bestPlan = sortedPlans[0];
+            transitInput.value = formatBestTransitSummary(bestPlan);
+          } else {
+            transitInput.value = `距起点较近，建议直接步行或打车前往 (${draft.address})`;
+          }
+        });
+      } else {
+        transitInput.value = `建议乘地铁或打车前往 (${draft.address})`;
+      }
     }
 
     function closeAddSpotModal() {
@@ -592,20 +724,20 @@
       if (!pendingSpotDraft) return;
       const name = document.getElementById('form-spot-name').value.trim();
       if (!name) {
-        alert("请输入地点名称！");
+        alert("请填写打卡点名称！");
         return;
       }
 
       const newSpot = {
         id: Date.now(),
         name: name,
-        category: document.getElementById('form-spot-cat').value.trim() || "打卡点",
+        category: document.getElementById('form-spot-cat').value.trim() || "景点打卡",
         lng: pendingSpotDraft.lng,
         lat: pendingSpotDraft.lat,
         day: parseInt(document.getElementById('form-spot-day').value),
         timeNeeded: document.getElementById('form-spot-time').value.trim() || "1.5小时",
         transit: document.getElementById('form-spot-transit').value.trim() || "自行前往",
-        tip: document.getElementById('form-spot-tip').value.trim() || "特色打卡",
+        tip: document.getElementById('form-spot-tip').value.trim() || "推荐打卡",
         cost: document.getElementById('form-spot-cost').value.trim() || "免费"
       };
 
@@ -616,39 +748,40 @@
       focusSpot(newSpot.id);
     }
 
+    // 地图直接点击选点
     function handleMapPick(lng, lat) {
-      // 通过高德逆地理编码读取真实路名
-      const geocoder = new AMap.Geocoder({ city: "南京市" });
-      geocoder.getAddress([lng, lat], function(status, result) {
-        let addr = "南京市选点";
-        if (status === 'complete' && result.regeocode) {
-          addr = result.regeocode.formattedAddress;
-        }
-
-        pendingSpotDraft = {
+      toggleAddMode();
+      if (geocoderService) {
+        geocoderService.getAddress([lng, lat], function(status, result) {
+          let addr = "南京市地图选点";
+          let poiName = "自定义打卡点";
+          if (status === 'complete' && result.regeocode) {
+            addr = result.regeocode.formattedAddress;
+            if (result.regeocode.aois && result.regeocode.aois[0]) {
+              poiName = result.regeocode.aois[0].name;
+            }
+          }
+          triggerAddSpotModal({
+            name: poiName,
+            lng: lng,
+            lat: lat,
+            address: addr,
+            category: "自定义打卡"
+          });
+        });
+      } else {
+        triggerAddSpotModal({
           name: "自定义打卡点",
           lng: lng,
           lat: lat,
-          address: addr,
-          category: "机位/美食"
-        };
-
-        document.getElementById('form-spot-name').value = "新打卡点";
-        document.getElementById('form-subtitle').innerText = addr;
-        document.getElementById('form-spot-day').value = (currentDayFilter === 'all' || currentDayFilter === '0') ? '1' : currentDayFilter;
-        document.getElementById('form-spot-time').value = "1.5小时";
-        document.getElementById('form-spot-cost').value = "免费";
-        document.getElementById('form-spot-cat').value = "自定义";
-        document.getElementById('form-spot-tip').value = "绝佳拍照角度/特色小吃";
-        document.getElementById('form-spot-transit').value = "打车或地铁直达";
-
-        toggleAddMode();
-        document.getElementById('custom-add-modal').classList.remove('hidden');
-      });
+          address: `坐标: ${lng.toFixed(4)}, ${lat.toFixed(4)}`,
+          category: "自定义打卡"
+        });
+      }
     }
 
     // ==========================================
-    // 路线规划与超时保护（彻底修复一直加载 Bug）
+    // 7. 路线导航弹窗（展示详细地铁/公交几号线、各自耗时、打车时间）
     // ==========================================
     function startNavigationTo(spotId) {
       if (currentInfoWindow) currentInfoWindow.close();
@@ -660,15 +793,15 @@
       document.getElementById('nav-origin-text').innerText = `起点：${userLocation.name}`;
       
       const modal = document.getElementById('nav-modal');
-      modal.classList.remove('translate-y-full');
-      modal.classList.remove('md:hidden');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
       calcAndRenderRoute();
     }
 
     function closeNavModal() {
       const modal = document.getElementById('nav-modal');
-      modal.classList.add('translate-y-full');
-      modal.classList.add('md:hidden');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     }
 
     function switchNavMode(mode) {
@@ -676,11 +809,11 @@
       const btnT = document.getElementById('nav-tab-transit');
       const btnD = document.getElementById('nav-tab-drive');
       if (mode === 'transit') {
-        btnT.className = "flex-1 py-1.5 text-xs font-semibold rounded-xl bg-emerald-600 text-white flex items-center justify-center gap-1.5 shadow-sm";
-        btnD.className = "flex-1 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center gap-1.5";
+        btnT.className = "flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white flex items-center justify-center gap-1.5 shadow-sm transition";
+        btnD.className = "flex-1 py-2 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center gap-1.5 transition";
       } else {
-        btnD.className = "flex-1 py-1.5 text-xs font-semibold rounded-xl bg-emerald-600 text-white flex items-center justify-center gap-1.5 shadow-sm";
-        btnT.className = "flex-1 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center gap-1.5";
+        btnD.className = "flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white flex items-center justify-center gap-1.5 shadow-sm transition";
+        btnT.className = "flex-1 py-2 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center gap-1.5 transition";
       }
       calcAndRenderRoute();
     }
@@ -690,120 +823,141 @@
       container.innerHTML = `
         <div class="text-center py-8 space-y-2 text-slate-400">
           <div class="inline-block w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-xs">正在高德计算推荐路线...</p>
+          <p class="text-xs">正在从【${userLocation.name}】计算最快路线...</p>
         </div>
       `;
 
       const start = [userLocation.lng, userLocation.lat];
       const end = [activeNavSpot.lng, activeNavSpot.lat];
-      const directAmapUrl = `https://uri.amap.com/navigation?from=${start[0]},${start[1]},我的位置&to=${end[0]},${end[1]},${activeNavSpot.name}&mode=${activeNavMode === 'transit' ? 'bus' : 'car'}`;
-
-      let hasResponded = false;
-      // 5秒超时安全熔断机制，杜绝一直卡死
-      const timeoutId = setTimeout(() => {
-        if (!hasResponded) {
-          hasResponded = true;
-          renderFallbackRoute(container, directAmapUrl, "公共交通查询超时或网络波动");
-        }
-      }, 5000);
+      const directAmapUrl = `https://uri.amap.com/navigation?from=${start[0]},${start[1]},${encodeURIComponent(userLocation.name)}&to=${end[0]},${end[1]},${encodeURIComponent(activeNavSpot.name)}&mode=${activeNavMode === 'transit' ? 'bus' : 'car'}`;
 
       if (activeNavMode === 'transit') {
-        transferService.search(start, end, function(status, result) {
-          if (hasResponded) return;
-          hasResponded = true;
-          clearTimeout(timeoutId);
+        if (!transferService) {
+          container.innerHTML = `<div class="p-4 text-center text-slate-500">公交服务初始化中，请稍后重试</div>`;
+          return;
+        }
 
+        transferService.search(start, end, function(status, result) {
           if (status === 'complete' && result.plans && result.plans.length > 0) {
-            const plan = result.plans[0];
-            const durationMin = Math.round(plan.time / 60);
+            // 按最短时间排序
+            const sortedPlans = [...result.plans].sort((a, b) => a.time - b.time);
+            const plan = sortedPlans[0];
+            const totalMin = Math.max(1, Math.round(plan.time / 60));
             const walkM = plan.walking_distance;
 
             let stepsHtml = '';
             plan.segments.forEach((seg) => {
-              if (seg.transit_mode === 'SUBWAY' || seg.transit_mode === 'BUS') {
+              if ((seg.transit_mode === 'SUBWAY' || seg.transit_mode === 'BUS') && seg.transit && seg.transit.lines && seg.transit.lines[0]) {
                 const line = seg.transit.lines[0];
+                const isSubway = seg.transit_mode === 'SUBWAY';
+                const segMin = line.stime ? Math.round(line.stime / 60) : Math.max(3, line.via_num * 3);
                 stepsHtml += `
-                  <div class="p-2.5 bg-blue-50 border border-blue-200/70 rounded-xl flex items-start gap-2">
-                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">乘</span>
-                    <div>
-                      <p class="font-bold text-slate-800 text-xs">乘坐【${line.name}】(${line.via_num}站)</p>
-                      <p class="text-[11px] text-slate-500 mt-0.5">${line.departure_stop.name} 上车 → ${line.arrival_stop.name} 下车</p>
+                  <div class="p-3 ${isSubway ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'} border rounded-2xl flex items-start justify-between gap-2">
+                    <div class="flex items-start gap-2.5">
+                      <span class="px-2 py-0.5 rounded-lg ${isSubway ? 'bg-blue-600' : 'bg-emerald-600'} text-white font-bold text-[10px] flex-shrink-0 mt-0.5">
+                        ${isSubway ? '地铁' : '公交'}
+                      </span>
+                      <div>
+                        <p class="font-bold text-slate-900 text-xs">${line.name}</p>
+                        <p class="text-[11px] text-slate-600 mt-0.5"><b>${line.departure_stop.name}</b> 上车 ➔ <b>${line.arrival_stop.name}</b> 下车</p>
+                      </div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                      <span class="text-xs font-bold ${isSubway ? 'text-blue-700' : 'text-emerald-700'}">约 ${segMin} 分钟</span>
+                      <p class="text-[10px] text-slate-400">途经 ${line.via_num} 站</p>
                     </div>
                   </div>
                 `;
-              } else if (seg.transit_mode === 'WALK' && seg.instruction) {
+              } else if (seg.transit_mode === 'WALK' && seg.distance > 0) {
+                const walkMin = Math.max(1, Math.round((seg.time || seg.distance / 1.2) / 60));
                 stepsHtml += `
-                  <div class="px-3 py-1 text-[11px] text-slate-500 flex items-center gap-1.5">
-                    <i data-lucide="footprints" class="w-3.5 h-3.5"></i> ${seg.instruction}
+                  <div class="px-3 py-1.5 bg-slate-50 rounded-xl text-[11px] text-slate-500 flex items-center justify-between">
+                    <span>🚶 ${seg.instruction || `步行 ${seg.distance} 米`}</span>
+                    <span class="font-medium text-slate-600">约 ${walkMin} 分钟</span>
                   </div>
                 `;
               }
             });
 
             container.innerHTML = `
-              <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-2 flex justify-between items-center">
+              <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex justify-between items-center">
                 <div>
-                  <span class="text-sm font-bold text-emerald-800">约 ${durationMin} 分钟</span>
-                  <span class="text-[11px] text-emerald-600 ml-1">票价约 ¥${plan.cost || 4}</span>
+                  <span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-md font-bold mr-1.5">最快方案</span>
+                  <span class="text-sm font-bold text-emerald-900">全程约 ${totalMin} 分钟</span>
                 </div>
-                <span class="text-[11px] text-slate-500">步行约 ${walkM} 米</span>
+                <span class="text-[11px] text-emerald-700 font-medium">票价约 ¥${plan.cost || 2} · 总步行 ${walkM}米</span>
               </div>
-              <div class="space-y-1.5 mb-3">${stepsHtml}</div>
+              <div class="space-y-2 my-2">${stepsHtml}</div>
               <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
                 唤起高德地图 App 实时导航 ↗
               </a>
             `;
-            lucide.createIcons();
           } else {
-            renderFallbackRoute(container, directAmapUrl, "两地距离较近或无直达公交方案");
+            // 距离极近无需坐车（如全季酒店老门东店到老门东景区）
+            container.innerHTML = `
+              <div class="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-center space-y-1.5 mb-3">
+                <p class="font-bold text-blue-900 text-sm">距离起点非常近，步行即可到达！</p>
+                <p class="text-xs text-slate-600">${activeNavSpot.transit}</p>
+              </div>
+              <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
+                打开高德地图查看步行引导 ↗
+              </a>
+            `;
           }
+          lucide.createIcons();
         });
       } else {
+        // 打车 / 自驾耗时计算
         drivingService.search(start, end, function(status, result) {
-          if (hasResponded) return;
-          hasResponded = true;
-          clearTimeout(timeoutId);
-
           if (status === 'complete' && result.routes && result.routes.length > 0) {
             const route = result.routes[0];
-            const durationMin = Math.round(route.time / 60);
+            const durationMin = Math.max(3, Math.round(route.time / 60));
             const distKm = (route.distance / 1000).toFixed(1);
-            const taxiCost = Math.round(11 + (distKm > 3 ? (distKm - 3) * 2.4 : 0));
+            const taxiCost = Math.round(11 + (distKm > 3 ? (distKm - 3) * 2.6 : 0));
 
             container.innerHTML = `
-              <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-3">
-                <div class="flex justify-between items-center mb-1">
-                  <span class="text-sm font-bold text-emerald-800">打车/自驾约 ${durationMin} 分钟</span>
-                  <span class="text-xs font-bold text-amber-600">预估打车 ¥${taxiCost}</span>
+              <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2 mb-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-base font-bold text-slate-900">🚕 打车预计 ${durationMin} 分钟</span>
+                  <span class="text-sm font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg">预估车费 ¥${taxiCost}</span>
                 </div>
-                <div class="text-[11px] text-slate-500">全程约 ${distKm} 公里 · 途径 ${route.steps.length} 个路段</div>
+                <p class="text-xs text-slate-600">起点：${userLocation.name} ➔ 终点：${activeNavSpot.name}</p>
+                <p class="text-[11px] text-slate-500">全程距离约 ${distKm} 公里 · 途经 ${route.steps.length} 个主要道路节点</p>
               </div>
               <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
-                唤起高德地图 App 实时导航 ↗
+                唤起高德地图 App 一键打车/导航 ↗
               </a>
             `;
           } else {
-            renderFallbackRoute(container, directAmapUrl, "未能计算出驾车路线");
+            container.innerHTML = `<div class="p-4 text-center text-slate-500">距离过近，建议直接步行前往</div>`;
           }
         });
       }
     }
 
-    function renderFallbackRoute(container, directUrl, reason) {
-      container.innerHTML = `
-        <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-2 mb-3">
-          <p class="font-bold text-amber-900 text-xs">${reason}</p>
-          <p class="text-[11px] text-slate-500">已为你自动生成高德地图 App 的实时导航直通通道：</p>
-        </div>
-        <a href="${directUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
-          唤起高德地图 App 实时导航 ↗
-        </a>
-      `;
+    // ==========================================
+    // 8. 日程切换、GPS 定位与基础操作
+    // ==========================================
+    function filterDay(day) {
+      currentDayFilter = day;
+      document.querySelectorAll('.day-filter-btn').forEach(btn => {
+        if (String(btn.dataset.day) === String(day)) {
+          btn.className = "day-filter-btn flex-1 md:flex-initial flex-shrink-0 px-3 py-1.5 text-xs rounded-full md:rounded-lg font-semibold bg-emerald-600 text-white shadow-md transition";
+        } else {
+          btn.className = "day-filter-btn flex-1 md:flex-initial flex-shrink-0 px-3 py-1.5 text-xs rounded-full md:rounded-lg font-medium bg-white text-slate-700 border border-slate-200/80 hover:bg-slate-100 transition";
+        }
+      });
+      render();
     }
 
-    // ==========================================
-    // 基础辅助函数
-    // ==========================================
+    function focusSpot(id) {
+      const spot = spots.find(s => s.id === id);
+      if (spot && map) {
+        map.setZoomAndCenter(15, [spot.lng, spot.lat]);
+        openSpotPopup(spot);
+      }
+    }
+
     function updateSpotDay(spotId, day) {
       const spot = spots.find(s => s.id === spotId);
       if (spot) {
@@ -815,7 +969,7 @@
     }
 
     function deleteSpot(spotId) {
-      if (confirm("确定从日程中移除此打卡点吗？")) {
+      if (confirm("确定从行程中删除该打卡点吗？")) {
         spots = spots.filter(s => s.id !== spotId);
         saveSpotsToStorage();
         if (currentInfoWindow) currentInfoWindow.close();
@@ -840,17 +994,42 @@
       }
     }
 
-    function exportCurrentSpotsToCode() {
-      const code = JSON.stringify(spots, null, 2);
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(code).then(() => {
-          alert("✅ 最新定稿数据已复制到剪贴板！\n\n前往 GitHub 仓库编辑 index.html，替换 DEFAULT_SPOTS 数组即可完成同步。");
-        }).catch(() => {
-          prompt("请手动复制下方数据内容：", code);
+    function getUserLocation() {
+      const mobileStatus = document.getElementById('mobile-gps-status-text');
+      const desktopStatus = document.getElementById('desktop-gps-status-text');
+      if (mobileStatus) mobileStatus.innerText = "正在获取实时 GPS 定位...";
+      if (desktopStatus) desktopStatus.innerText = "正在获取实时 GPS 定位...";
+
+      AMap.plugin('AMap.Geolocation', function() {
+        const geolocation = new AMap.Geolocation({
+          enableHighAccuracy: true,
+          timeout: 6000,
+          needAddress: true
         });
-      } else {
-        prompt("请手动复制下方数据内容：", code);
-      }
+
+        geolocation.getCurrentPosition(function(status, result) {
+          if (status === 'complete' && result.position) {
+            userLocation = {
+              lng: result.position.lng,
+              lat: result.position.lat,
+              isRealGps: true,
+              name: result.formattedAddress ? result.formattedAddress.replace('江苏省南京市', '') : "我的实时位置"
+            };
+            const text = `实时起点：${userLocation.name}`;
+            if (mobileStatus) mobileStatus.innerText = text;
+            if (desktopStatus) desktopStatus.innerText = text;
+            renderHotelOriginMarker();
+            map.setCenter([userLocation.lng, userLocation.lat]);
+          } else {
+            userLocation = { ...DEFAULT_HOTEL };
+            const fallbackText = `未授权定位，默认起点：${DEFAULT_HOTEL.name}`;
+            if (mobileStatus) mobileStatus.innerText = fallbackText;
+            if (desktopStatus) desktopStatus.innerText = fallbackText;
+            renderHotelOriginMarker();
+            map.setCenter([DEFAULT_HOTEL.lng, DEFAULT_HOTEL.lat]);
+          }
+        });
+      });
     }
 
     function toggleDrawerHeight() {
@@ -860,60 +1039,27 @@
       isDrawerExpanded = !isDrawerExpanded;
 
       if (isDrawerExpanded) {
-        drawer.style.height = '60dvh';
+        drawer.style.height = '65dvh';
         tip.innerText = "下滑收起";
         icon.setAttribute('data-lucide', 'chevron-down');
       } else {
-        drawer.style.height = '220px';
-        tip.innerText = "上滑查看完整";
+        drawer.style.height = '230px';
+        tip.innerText = "上滑展开列表";
         icon.setAttribute('data-lucide', 'chevron-up');
       }
       lucide.createIcons();
     }
 
-    function getUserLocation() {
-      const mobileStatus = document.getElementById('mobile-gps-status-text');
-      if (mobileStatus) mobileStatus.innerText = "正在获取定位...";
-
-      const geolocation = new AMap.Geolocation({
-        enableHighAccuracy: true,
-        timeout: 8000,
-        needAddress: true
-      });
-
-      geolocation.getCurrentPosition(function(status, result) {
-        if (status === 'complete') {
-          userLocation = {
-            lng: result.position.lng,
-            lat: result.position.lat,
-            isRealGps: true,
-            name: result.formattedAddress ? result.formattedAddress.slice(0, 15) : "我的真实定位"
-          };
-          if (mobileStatus) mobileStatus.innerText = `GPS 已定位：${userLocation.name}`;
-          map.setCenter([userLocation.lng, userLocation.lat]);
-        } else {
-          if (mobileStatus) mobileStatus.innerText = "定位受限，已使用新街口作为基准点";
-        }
-      });
-    }
-
-    function filterDay(day) {
-      currentDayFilter = day;
-      document.querySelectorAll('.day-filter-btn').forEach(btn => {
-        if (btn.dataset.day == day) {
-          btn.className = "day-filter-btn flex-1 md:flex-initial flex-shrink-0 px-3 py-1 text-xs rounded-full md:rounded-lg font-medium bg-emerald-600 text-white shadow-md transition";
-        } else {
-          btn.className = "day-filter-btn flex-1 md:flex-initial flex-shrink-0 px-3 py-1 text-xs rounded-full md:rounded-lg font-medium bg-white text-slate-700 border border-slate-200 shadow-sm transition";
-        }
-      });
-      render();
-    }
-
-    function focusSpot(id) {
-      const spot = spots.find(s => s.id === id);
-      if (spot) {
-        map.setZoomAndCenter(15, [spot.lng, spot.lat]);
-        openSpotPopup(spot);
+    function exportCurrentSpotsToCode() {
+      const code = JSON.stringify(spots, null, 2);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(code).then(() => {
+          alert("✅ 最新定稿数据已复制到剪贴板！\n\n前往 GitHub 仓库编辑 index.html，替换 DEFAULT_SPOTS 数组即可同步给伴侣。");
+        }).catch(() => {
+          prompt("请复制下方定稿数据：", code);
+        });
+      } else {
+        prompt("请复制下方定稿数据：", code);
       }
     }
 
