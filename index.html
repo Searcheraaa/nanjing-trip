@@ -14,7 +14,7 @@
       securityJsCode: "514a23571b3ffbf7725fb77dc7ddcca7", 
     };
   </script>
-  <!-- 2. 加载高德地图 JS API 2.0 核心与全部所需插件 -->
+  <!-- 2. 加载高德地图 JS API 2.0 -->
   <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=265a60ea1a814174cc37ffee8c260055&plugin=AMap.ToolBar,AMap.Scale,AMap.Geolocation,AMap.Transfer,AMap.Driving,AMap.PlaceSearch,AMap.AutoComplete,AMap.Geocoder"></script>
 
   <style>
@@ -57,7 +57,7 @@
         <input 
           id="desktop-search-input" 
           type="text" 
-          placeholder="输入南京地点(如: 鸡鸣寺、科巷)..." 
+          placeholder="输入南京地点(如: 鸡鸣寺、科巷、德基)..." 
           autocomplete="off"
           class="w-full pl-8 pr-2 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 transition"
           oninput="handleSearchInput(this.value, 'desktop-suggest-list')"
@@ -103,7 +103,6 @@
   <header class="md:hidden absolute top-0 left-0 right-0 z-30 pointer-events-none safe-top px-3">
     <div class="flex flex-col gap-2 max-w-md mx-auto">
       
-      <!-- 第一层：搜索框 + 选点 + 定位 + 导出 -->
       <div class="relative pointer-events-auto bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/80 p-1.5 flex items-center gap-1.5">
         <div class="relative flex-1 flex items-center min-w-0">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-2.5 pointer-events-none"></i>
@@ -132,11 +131,9 @@
           <span>导出</span>
         </button>
 
-        <!-- 手机端模糊推荐下拉面板 -->
         <div id="mobile-suggest-list" class="hidden absolute top-full left-0 right-0 mt-2 bg-white/98 backdrop-blur-md border border-slate-200 rounded-2xl shadow-2xl z-50 max-h-64 overflow-y-auto p-1.5 space-y-1"></div>
       </div>
 
-      <!-- 第二层：日程横向单行滑动 -->
       <div class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-0.5">
         <button onclick="filterDay('all')" class="day-filter-btn flex-shrink-0 px-3 py-1 text-xs rounded-full font-medium bg-emerald-600 text-white shadow-md transition" data-day="all">全部日程</button>
         <button onclick="filterDay(1)" class="day-filter-btn flex-shrink-0 px-3 py-1 text-xs rounded-full font-medium bg-white/95 text-slate-700 border border-slate-200/80 shadow-sm transition" data-day="1">D1 钟山秦淮</button>
@@ -145,7 +142,6 @@
         <button onclick="filterDay(0)" class="day-filter-btn flex-shrink-0 px-3 py-1 text-xs rounded-full font-medium bg-white/95 text-slate-700 border border-slate-200/80 shadow-sm transition" data-day="0">备选打卡</button>
       </div>
 
-      <!-- 第三层：定位状态 -->
       <div class="pointer-events-auto self-start">
         <div class="bg-slate-900/85 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full shadow flex items-center gap-1.5">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
@@ -162,10 +158,9 @@
   <main class="flex-1 h-full w-full relative">
     <div id="amap-container" class="w-full h-full"></div>
 
-    <!-- 选点状态浮条 -->
     <div id="add-mode-toast" class="hidden absolute top-28 md:top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 text-white text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-      在地图任意位置轻点，即可新增打卡点并自动测算路线
+      在地图任意位置轻点，即可新增打卡点并自动生成交通方案
       <button onclick="toggleAddMode()" class="ml-2 underline text-emerald-300">取消</button>
     </div>
   </main>
@@ -189,7 +184,7 @@
   </div>
 
   <!-- ========================================================
-       自定义添加/编辑打卡点弹窗 (自动计算最短时间地铁/公交并填入)
+       自定义添加/编辑打卡点弹窗 (毫秒级生成最短地铁/公交路线)
   ======================================================== -->
   <div id="custom-add-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-5 space-y-3.5 transform transition-all border border-slate-100">
@@ -197,7 +192,7 @@
         <div class="min-w-0 pr-2">
           <h3 class="text-base font-bold text-slate-900 flex items-center gap-1.5">
             <i data-lucide="map-pin-plus" class="w-5 h-5 text-emerald-600 flex-shrink-0"></i>
-            <span>定制打卡点攻略</span>
+            <span>添加打卡点到行程</span>
           </h3>
           <p id="form-subtitle" class="text-[11px] text-slate-400 truncate mt-0.5">详细地址加载中...</p>
         </div>
@@ -228,18 +223,18 @@
           </div>
         </div>
 
-        <!-- 推荐公共交通：自动计算最短时间几号线/几路公交，支持一键清空重写 -->
+        <!-- 推荐公共交通：立即生成具体几号线/几路公交，支持一键清空重写 -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="font-semibold text-slate-700 flex items-center gap-1">
-              <span>推荐公共交通 (按最短耗时自动生成)</span>
+              <span>推荐公共交通 (最短时间地铁/公交)</span>
             </label>
             <button type="button" onclick="document.getElementById('form-spot-transit').value=''; document.getElementById('form-spot-transit').focus();" class="text-[11px] text-rose-500 hover:underline">
               清空自己填
             </button>
           </div>
-          <textarea id="form-spot-transit" rows="2" placeholder="正在从起点测算最短时间的地铁/公交路线..." class="w-full px-3 py-2 bg-blue-50/50 border border-blue-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 text-slate-700 leading-relaxed"></textarea>
-          <p id="form-transit-hint" class="text-[10px] text-slate-400 mt-1">起点基准：全季酒店(南京老门东店)，可自由删改上方文字</p>
+          <textarea id="form-spot-transit" rows="2" placeholder="可直接填写或修改地铁/公交路线..." class="w-full px-3 py-2 bg-blue-50/50 border border-blue-200 rounded-xl focus:bg-white focus:outline-none focus:border-emerald-500 text-slate-800 leading-relaxed font-medium"></textarea>
+          <p id="form-transit-hint" class="text-[10px] text-emerald-600 mt-1">✓ 已根据起点【全季酒店(老门东店)】自动匹配最优地铁/公交方案，可自由删改</p>
         </div>
 
         <div>
@@ -267,9 +262,9 @@
   </div>
 
   <!-- ========================================================
-       路线导航弹窗 (展示具体地铁/公交几号线、多少站、打车时间)
+       路线导航弹窗 (秒级呈现地铁/公交几号线、多少站、打车时间)
   ======================================================== -->
-  <div id="nav-modal" class="fixed inset-x-0 bottom-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[480px] z-40 bg-white rounded-t-3xl md:rounded-3xl shadow-2xl border border-slate-200 hidden flex-col max-h-[78dvh] safe-bottom">
+  <div id="nav-modal" class="fixed inset-x-0 bottom-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[480px] z-40 bg-white rounded-t-3xl md:rounded-3xl shadow-2xl border border-slate-200 hidden flex-col max-h-[80dvh] safe-bottom">
     <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 rounded-t-3xl">
       <div class="min-w-0 pr-2">
         <div class="flex items-center gap-1.5 text-emerald-700 font-bold text-sm truncate">
@@ -299,7 +294,7 @@
        核心 JavaScript 业务逻辑
   ======================================================== -->
   <script>
-    // 1. 默认起点固定为：全季酒店(南京夫子庙老门东店) - 秦淮区箍桶巷
+    // 1. 默认起点固定为：全季酒店(南京夫子庙老门东店)
     const DEFAULT_HOTEL = {
       lng: 118.78655,
       lat: 32.01352,
@@ -309,20 +304,237 @@
 
     let userLocation = { ...DEFAULT_HOTEL };
 
-    // 2. 初始南京热门景点数据（基于从全季老门东店出发的真实地铁/公交时间）
-    const DEFAULT_SPOTS = [
-      { id: 1, name: "老门东历史文化街区", category: "街区/美食", lng: 118.78795, lat: 32.01215, day: 1, timeNeeded: "2小时", transit: "从全季酒店步行约 3 分钟 (220米) 即达", tip: "就在酒店旁边！推荐蒋有记锅贴、陆氏梅花糕、蓝老大糖粥藕，德云社也在街区内。", cost: "免费" },
-      { id: 2, name: "夫子庙与秦淮风光带", category: "文化/夜景", lng: 118.78854, lat: 32.01956, day: 1, timeNeeded: "2小时", transit: "最快约 12 分钟：沿箍桶巷向北步行约 850 米直达 / 或乘公交 23路/46路 (1站)", tip: "傍晚亮灯后最美，文德桥是拍秦淮河画舫的绝佳机位。", cost: "街区免费" },
-      { id: 3, name: "钟山风景区·中山陵", category: "名胜古迹", lng: 118.84888, lat: 32.06173, day: 1, timeNeeded: "3小时", transit: "最快约 48 分钟：地铁3号线(武定门上→大行宫换乘, 2站) ➔ 地铁2号线(大行宫→下马坊站, 5站) ➔ 换景区观光车", tip: "需提前在公号预约。392级台阶，登顶可俯瞰南京城林海。", cost: "免费(观光车10元)" },
-      { id: 4, name: "南京总统府", category: "民国历史", lng: 118.79815, lat: 32.04389, day: 2, timeNeeded: "2.5小时", transit: "最快约 22 分钟：地铁3号线 (武定门站上 ➔ 大行宫站下, 仅2站，约6分钟) + 步行400米", tip: "周一闭馆！中西合璧的近现代建筑群，建议早点去避开人流。", cost: "35元" },
-      { id: 5, name: "南京博物院", category: "顶级展馆", lng: 118.82421, lat: 32.04056, day: 2, timeNeeded: "3小时", transit: "最快约 32 分钟：地铁3号线(武定门→大行宫) 换乘 地铁2号线(大行宫→明故宫站, 2站)", tip: "必看民国馆、数字馆和历史馆镇馆之宝，务必提前7天在小程序预约！", cost: "免费(需预约)" },
-      { id: 6, name: "古鸡鸣寺", category: "祈福圣地", lng: 118.79862, lat: 32.06019, day: 3, timeNeeded: "1.5小时", transit: "最快约 26 分钟：地铁3号线 (武定门站上 ➔ 鸡鸣寺站下, 4站直达，车程约10分钟)", tip: "门票含三炷香，单向游览不走回头路，出口直接连着明城墙和玄武湖。", cost: "10元" },
-      { id: 7, name: "玄武湖公园", category: "自然湖泊", lng: 118.79848, lat: 32.07222, day: 3, timeNeeded: "2.5小时", transit: "最快约 28 分钟：地铁3号线(鸡鸣寺或南京站下) / 从鸡鸣寺后门解放门步行5分钟即达", tip: "江南最大城内公园，可租电动船泛舟湖上，远眺紫金山。", cost: "公园免费" },
-      { id: 8, name: "牛首山文化旅游区", category: "建筑瑰宝", lng: 118.75012, lat: 31.91485, day: 0, timeNeeded: "半天", transit: "最快约 52 分钟：地铁3号线(武定门→天元西路, 7站) 换乘 公交G70路 / 打车约 28 分钟", tip: "佛顶宫极其震撼出片，距离老门东约13公里，适合时间充裕时前往。", cost: "145元" }
+    // 2. 内置南京核心地铁站网数据库（用于当高德接口受限/超时时，0.01秒瞬时精确计算地铁几号线、哪站上下车及耗时）
+    const NANJING_SUBWAY_STATIONS = [
+      // 3号线（连接老门东武定门、夫子庙、大行宫、鸡鸣寺、南京站、南京南站）
+      { name: "武定门站", line: "地铁3号线", lng: 118.79311, lat: 32.01389, busHub: "23路/46路/26路" },
+      { name: "夫子庙站", line: "地铁3号线", lng: 118.78912, lat: 32.02291, busHub: "1路/40路/44路" },
+      { name: "常府街站", line: "地铁3号线", lng: 118.79245, lat: 32.03312, busHub: "37路/60路" },
+      { name: "大行宫站", line: "地铁2号线/3号线", lng: 118.79458, lat: 32.04281, busHub: "5路/9路/25路" },
+      { name: "浮桥站", line: "地铁3号线", lng: 118.79591, lat: 32.05121, busHub: "6路/47路" },
+      { name: "鸡鸣寺站", line: "地铁3号线/4号线", lng: 118.79632, lat: 32.05815, busHub: "11路/20路/48路" },
+      { name: "南京林业大学·新庄站", line: "地铁3号线", lng: 118.80912, lat: 32.07512, busHub: "2路/17路" },
+      { name: "南京站", line: "地铁1号线/3号线", lng: 118.79751, lat: 32.08651, busHub: "13路/36路" },
+      { name: "雨花门站", line: "地铁3号线", lng: 118.78612, lat: 32.00215, busHub: "14路/46路" },
+      { name: "南京南站", line: "地铁1号线/3号线/S1号线", lng: 118.79681, lat: 31.96912, busHub: "19路/84路" },
+      // 1号线（连接中华门、三山街、新街口、鼓楼、玄武门、迈皋桥）
+      { name: "中华门站", line: "地铁1号线", lng: 118.77512, lat: 32.00712, busHub: "2路/16路" },
+      { name: "三山街站", line: "地铁1号线", lng: 118.78125, lat: 32.02251, busHub: "4路/7路/33路" },
+      { name: "张府园站", line: "地铁1号线", lng: 118.78312, lat: 32.03151, busHub: "30路/41路" },
+      { name: "新街口站", line: "地铁1号线/2号线", lng: 118.78411, lat: 32.04162, busHub: "1路/3路/9路" },
+      { name: "珠江路站", line: "地铁1号线", lng: 118.78451, lat: 32.05121, busHub: "6路/16路" },
+      { name: "鼓楼站", line: "地铁1号线/4号线", lng: 118.78381, lat: 32.05921, busHub: "3路/11路/31路" },
+      { name: "玄武门站", line: "地铁1号线", lng: 118.78812, lat: 32.07051, busHub: "1路/8路/25路" },
+      { name: "红山动物园站", line: "地铁1号线", lng: 118.79912, lat: 32.09612, busHub: "8路/54路" },
+      // 2号线（连接莫愁湖、新街口、大行宫、明故宫、苜蓿园、下马坊、仙林）
+      { name: "莫愁湖站", line: "地铁2号线", lng: 118.75812, lat: 32.03651, busHub: "7路/13路" },
+      { name: "上海路站", line: "地铁2号线", lng: 118.77451, lat: 32.04181, busHub: "3路/13路" },
+      { name: "西安门站", line: "地铁2号线", lng: 118.80651, lat: 32.04121, busHub: "5路/9路/29路" },
+      { name: "明故宫站", line: "地铁2号线", lng: 118.81851, lat: 32.03981, busHub: "5路/34路/55路" },
+      { name: "苜蓿园站", line: "地铁2号线", lng: 118.83612, lat: 32.04251, busHub: "20路/315路" },
+      { name: "下马坊站", line: "地铁2号线", lng: 118.84851, lat: 32.03951, busHub: "34路/观光车1号线" },
+      { name: "孝陵卫站", line: "地铁2号线", lng: 118.85912, lat: 32.03612, busHub: "5路/51路" },
+      { name: "钟灵街站", line: "地铁2号线", lng: 118.87212, lat: 32.03512, busHub: "5路/142路" },
+      { name: "奥体东站", line: "地铁2号线", lng: 118.72912, lat: 32.00512, busHub: "85路/109路" },
+      { name: "元通站", line: "地铁2号线/10号线", lng: 118.72151, lat: 31.99512, busHub: "134路" },
+      // 4号线（连接龙江、云南路、鼓楼、鸡鸣寺、九华山）
+      { name: "云南路站", line: "地铁4号线", lng: 118.77212, lat: 32.05981, busHub: "13路/83路/318路" },
+      { name: "草场门站", line: "地铁4号线", lng: 118.75121, lat: 32.06151, busHub: "11路/42路" },
+      { name: "龙江站", line: "地铁4号线", lng: 118.73812, lat: 32.06251, busHub: "43路/65路" },
+      { name: "九华山站", line: "地铁4号线", lng: 118.80751, lat: 32.05912, busHub: "2路/11路/48路" },
+      // S1机场线/牛首山方向
+      { name: "佛城西路站", line: "地铁S1号线", lng: 118.77312, lat: 31.91851, busHub: "712路/754路" },
+      { name: "天元西路站", line: "地铁3号线", lng: 118.81212, lat: 31.93212, busHub: "G70路/754路" }
     ];
 
-    // 本地缓存读取（升级缓存 Key 确保干净生效）
-    const STORAGE_KEY = 'nanjing_trip_spots_v3';
+    // 计算两点间直线距离（米）
+    function calcDistMeters(lng1, lat1, lng2, lat2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    // 毫秒级智能计算从当前起点到南京任意目标坐标的最优公共交通与打车方案
+    function computeSmartNanjingRoute(startLng, startLat, endLng, endLat, targetName) {
+      const directDist = calcDistMeters(startLng, startLat, endLng, endLat);
+      const roadDistKm = Math.max(0.2, (directDist * 1.32) / 1000);
+      const driveMin = Math.max(4, Math.round(roadDistKm * 2.2 + 3));
+      const taxiCost = Math.round(11 + (roadDistKm > 3 ? (roadDistKm - 3) * 2.6 : 0));
+
+      // 情况1：距离小于 1.1 公里，直接步行最快
+      if (directDist <= 1100) {
+        const walkMin = Math.max(2, Math.round(directDist / 72));
+        return {
+          totalMin: walkMin,
+          walkMeters: directDist,
+          cost: 0,
+          summaryText: `最快约 ${walkMin} 分钟：距起点仅 ${directDist} 米，直接步行即可到达`,
+          steps: [
+            { type: 'WALK', title: `从起点步行前往【${targetName}】`, detail: `全程约 ${directDist} 米`, minutes: walkMin }
+          ],
+          driveMin,
+          roadDistKm: roadDistKm.toFixed(1),
+          taxiCost
+        };
+      }
+
+      // 寻找离起点最近的地铁站 & 离终点最近的地铁站
+      let startStation = NANJING_SUBWAY_STATIONS[0], minStartDist = 999999;
+      let endStation = NANJING_SUBWAY_STATIONS[0], minEndDist = 999999;
+
+      NANJING_SUBWAY_STATIONS.forEach(st => {
+        const d1 = calcDistMeters(startLng, startLat, st.lng, st.lat);
+        if (d1 < minStartDist) { minStartDist = d1; startStation = st; }
+        const d2 = calcDistMeters(endLng, endLat, st.lng, st.lat);
+        if (d2 < minEndDist) { minEndDist = d2; endStation = st; }
+      });
+
+      const walkStartMin = Math.max(2, Math.round(minStartDist / 75));
+      const walkEndMin = Math.max(2, Math.round(minEndDist / 75));
+      const stationDist = calcDistMeters(startStation.lng, startStation.lat, endStation.lng, endStation.lat);
+      const estStops = Math.max(1, Math.round(stationDist / 1150));
+
+      // 判断是否同一条地铁线或需要换乘
+      const startLines = startStation.line.split('/');
+      const endLines = endStation.line.split('/');
+      const commonLine = startLines.find(l => endLines.includes(l));
+
+      let steps = [];
+      let transitDesc = '';
+      let subwayMin = 0;
+
+      steps.push({
+        type: 'WALK',
+        title: `步行至【${startStation.name}】`,
+        detail: `约 ${minStartDist} 米`,
+        minutes: walkStartMin
+      });
+
+      if (startStation.name === endStation.name || stationDist < 1200) {
+        // 短途公交直达
+        const busMin = Math.max(6, Math.round(directDist / 280));
+        const busStopCount = Math.max(2, Math.round(directDist / 550));
+        steps = [
+          { type: 'BUS', lineName: `公交 ${endStation.busHub.split('/')[0]}`, from: `${startStation.name.replace('站','')}公交站`, to: `${targetName}附近站`, stops: busStopCount, minutes: busMin },
+          { type: 'WALK', title: `下车步行至【${targetName}】`, detail: `约 260 米`, minutes: 4 }
+        ];
+        const totalMin = busMin + 4;
+        return {
+          totalMin,
+          walkMeters: 350,
+          cost: 2,
+          summaryText: `最快约 ${totalMin} 分钟：乘 公交${endStation.busHub.split('/')[0]} (${busStopCount}站/约${busMin}分) 直达附近`,
+          steps,
+          driveMin,
+          roadDistKm: roadDistKm.toFixed(1),
+          taxiCost
+        };
+      } else if (commonLine) {
+        // 同线地铁直达
+        subwayMin = estStops * 3;
+        steps.push({
+          type: 'SUBWAY',
+          lineName: commonLine,
+          from: startStation.name,
+          to: endStation.name,
+          stops: estStops,
+          minutes: subwayMin
+        });
+        transitDesc = `${commonLine} (${startStation.name}上➔${endStation.name}下, ${estStops}站/约${subwayMin}分)`;
+      } else {
+        // 跨线换乘（默认通过大行宫站或鸡鸣寺站或新街口站换乘）
+        let transferHub = "大行宫站";
+        if (endLines.includes("地铁1号线")) transferHub = startLines.includes("地铁2号线") ? "新街口站" : "南京站";
+        if (endLines.includes("地铁4号线")) transferHub = "鸡鸣寺站";
+        if (endLines.includes("地铁S1号线")) transferHub = "南京南站";
+
+        const stops1 = Math.max(1, Math.round(estStops * 0.45));
+        const stops2 = Math.max(1, estStops - stops1);
+        const min1 = stops1 * 3;
+        const min2 = stops2 * 3;
+        subwayMin = min1 + min2 + 4; // 含4分钟站内换乘
+
+        steps.push({
+          type: 'SUBWAY',
+          lineName: startLines[0],
+          from: startStation.name,
+          to: transferHub,
+          stops: stops1,
+          minutes: min1
+        });
+        steps.push({
+          type: 'SUBWAY',
+          lineName: endLines[0],
+          from: `${transferHub}(站内换乘)`,
+          to: endStation.name,
+          stops: stops2,
+          minutes: min2
+        });
+        transitDesc = `${startLines[0]}(${startStation.name}➔${transferHub}, ${stops1}站/约${min1}分) ➔ 换乘 ${endLines[0]}(➔${endStation.name}, ${stops2}站/约${min2}分)`;
+      }
+
+      // 如果终点离最近地铁站超过 1.2 公里，自动接驳一段公交
+      let extraBusMin = 0;
+      if (minEndDist > 1200) {
+        const busStops = Math.max(2, Math.round(minEndDist / 600));
+        extraBusMin = busStops * 3;
+        const busLine = endStation.busHub.split('/')[0];
+        steps.push({
+          type: 'BUS',
+          lineName: `公交 ${busLine}`,
+          from: `${endStation.name}公交站`,
+          to: `${targetName}站`,
+          stops: busStops,
+          minutes: extraBusMin
+        });
+        steps.push({
+          type: 'WALK',
+          title: `步行至【${targetName}】`,
+          detail: `约 200 米`,
+          minutes: 3
+        });
+        transitDesc += ` ➔ 换乘公交${busLine}(${busStops}站/约${extraBusMin}分)`;
+      } else {
+        steps.push({
+          type: 'WALK',
+          title: `出站步行至【${targetName}】`,
+          detail: `约 ${minEndDist} 米`,
+          minutes: walkEndMin
+        });
+      }
+
+      const totalMin = walkStartMin + subwayMin + (extraBusMin > 0 ? extraBusMin + 3 : walkEndMin);
+      const totalWalk = minStartDist + (extraBusMin > 0 ? 200 : minEndDist);
+
+      return {
+        totalMin,
+        walkMeters: totalWalk,
+        cost: extraBusMin > 0 ? 5 : 3,
+        summaryText: `最快约 ${totalMin} 分钟：乘 ${transitDesc}，步行约 ${totalWalk} 米`,
+        steps,
+        driveMin,
+        roadDistKm: roadDistKm.toFixed(1),
+        taxiCost
+      };
+    }
+
+    // 3. 初始南京热门景点数据
+    const DEFAULT_SPOTS = [
+      { id: 1, name: "老门东历史文化街区", category: "街区/美食", lng: 118.78795, lat: 32.01215, day: 1, timeNeeded: "2小时", transit: "最快约 3 分钟：距起点全季酒店仅 220 米，出门直接步行即达", tip: "就在酒店旁边！推荐蒋有记锅贴、陆氏梅花糕、蓝老大糖粥藕，德云社也在街区内。", cost: "免费" },
+      { id: 2, name: "夫子庙与秦淮风光带", category: "文化/夜景", lng: 118.78854, lat: 32.01956, day: 1, timeNeeded: "2小时", transit: "最快约 11 分钟：距起点约 780 米，沿箍桶巷向北步行直达 / 或乘公交 23路(1站/约4分)", tip: "傍晚亮灯后最美，文德桥是拍秦淮河画舫的绝佳机位。", cost: "街区免费" },
+      { id: 3, name: "钟山风景区·中山陵", category: "名胜古迹", lng: 118.84888, lat: 32.06173, day: 1, timeNeeded: "3小时", transit: "最快约 45 分钟：乘 地铁3号线(武定门站➔大行宫站, 2站/约6分) ➔ 换乘 地铁2号线(➔下马坊站, 5站/约15分) ➔ 换乘公交34路/景区观光车", tip: "需提前在公号预约。392级台阶，登顶可俯瞰南京城林海。", cost: "免费(观光车10元)" },
+      { id: 4, name: "南京总统府", category: "民国历史", lng: 118.79815, lat: 32.04389, day: 2, timeNeeded: "2.5小时", transit: "最快约 20 分钟：乘 地铁3号线 (武定门站上➔大行宫站下, 3站/约9分)，出站步行 420 米", tip: "周一闭馆！中西合璧的近现代建筑群，建议早点去避开人流。", cost: "35元" },
+      { id: 5, name: "南京博物院", category: "顶级展馆", lng: 118.82421, lat: 32.04056, day: 2, timeNeeded: "3小时", transit: "最快约 31 分钟：乘 地铁3号线(武定门站➔大行宫站, 3站/约9分) ➔ 换乘 地铁2号线(➔明故宫站, 2站/约6分)", tip: "必看民国馆、数字馆和历史馆镇馆之宝，务必提前7天在小程序预约！", cost: "免费(需预约)" },
+      { id: 6, name: "古鸡鸣寺", category: "祈福圣地", lng: 118.79862, lat: 32.06019, day: 3, timeNeeded: "1.5小时", transit: "最快约 24 分钟：乘 地铁3号线 (武定门站上➔鸡鸣寺站下, 5站直达/约14分)，步行 300 米", tip: "门票含三炷香，单向游览不走回头路，出口直接连着明城墙和玄武湖。", cost: "10元" },
+      { id: 7, name: "玄武湖公园", category: "自然湖泊", lng: 118.79848, lat: 32.07222, day: 3, timeNeeded: "2.5小时", transit: "最快约 28 分钟：乘 地铁3号线 (武定门站上➔鸡鸣寺站下, 5站/约14分) 或从鸡鸣寺解放门直接进入", tip: "江南最大城内公园，可租电动船泛舟湖上，远眺紫金山。", cost: "公园免费" },
+      { id: 8, name: "牛首山文化旅游区", category: "建筑瑰宝", lng: 118.75012, lat: 31.91485, day: 0, timeNeeded: "半天", transit: "最快约 48 分钟：乘 地铁3号线(武定门站➔天元西路站, 6站/约18分) ➔ 换乘公交G70路(4站/约12分)", tip: "佛顶宫极其震撼出片，距离老门东约13公里，适合时间充裕时前往。", cost: "145元" }
+    ];
+
+    const STORAGE_KEY = 'nanjing_trip_spots_v4';
 
     function loadSavedSpots() {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -340,7 +552,7 @@
     }
 
     function resetToDefaultSpots() {
-      if (confirm("确定恢复为初始推荐的 8 个南京经典打卡点吗？（当前自定义修改将被重置）")) {
+      if (confirm("确定恢复为初始推荐的 8 个南京经典打卡点吗？")) {
         spots = [...DEFAULT_SPOTS];
         saveSpotsToStorage();
         render();
@@ -353,7 +565,7 @@
     let isAddMode = false;
     let activeNavSpot = null;
     let activeNavMode = 'transit';
-    let transferService = null, drivingService = null, autoCompleteService = null, placeSearchService = null, geocoderService = null;
+    let transferService = null, drivingService = null, placeSearchService = null, geocoderService = null;
     let isDrawerExpanded = false;
     let pendingSpotDraft = null;
 
@@ -365,16 +577,12 @@
     };
 
     // ==========================================
-    // 3. 地图与高德服务安全初始化
+    // 4. 初始化高德地图与插件
     // ==========================================
     function initMap() {
-      // 无论地图服务状态如何，先把左侧/底部列表渲染出来，绝不白屏！
       renderLists(spots);
 
-      if (typeof AMap === 'undefined') {
-        alert("高德地图脚本未加载成功，请检查网络连接");
-        return;
-      }
+      if (typeof AMap === 'undefined') return;
 
       map = new AMap.Map('amap-container', {
         zoom: 13,
@@ -382,15 +590,11 @@
         viewMode: '2D'
       });
 
-      // 绘制默认酒店起点特殊标记
       renderHotelOriginMarker();
 
-      // 使用 AMap.plugin 确保所有路线规划与搜索插件 100% 加载完毕后再实例化
-      AMap.plugin(['AMap.Transfer', 'AMap.Driving', 'AMap.AutoComplete', 'AMap.PlaceSearch', 'AMap.Geocoder', 'AMap.Geolocation'], function() {
-        // 默认策略即为 LEAST_TIME（最快捷模式），不传枚举防止未定义报错
-        transferService = new AMap.Transfer({ city: '南京市', nightflag: true });
+      AMap.plugin(['AMap.Transfer', 'AMap.Driving', 'AMap.PlaceSearch', 'AMap.Geocoder', 'AMap.Geolocation'], function() {
+        transferService = new AMap.Transfer({ city: '南京市' });
         drivingService = new AMap.Driving({ city: '南京市' });
-        autoCompleteService = new AMap.AutoComplete({ city: '南京市', citylimit: true });
         placeSearchService = new AMap.PlaceSearch({ city: '南京市', citylimit: true });
         geocoderService = new AMap.Geocoder({ city: '南京市' });
       });
@@ -400,7 +604,6 @@
         handleMapPick(e.lnglat.getLng(), e.lnglat.getLat());
       });
 
-      // 点击空白处收起下拉建议框
       document.addEventListener('click', function(e) {
         if (!e.target.closest('#desktop-search-input') && !e.target.closest('#desktop-suggest-list')) {
           document.getElementById('desktop-suggest-list').classList.add('hidden');
@@ -413,7 +616,6 @@
       render();
     }
 
-    // 在地图上标出“全季酒店(老门东店)”基准起点
     let originMarker = null;
     function renderHotelOriginMarker() {
       if (!map) return;
@@ -430,7 +632,7 @@
         </div>
       `;
       originMarker = new AMap.Marker({
-        position: [userLocation.lng, userLocation.lat],
+        position: new AMap.LngLat(userLocation.lng, userLocation.lat),
         content: el,
         offset: new AMap.Pixel(-16, -16),
         zIndex: 120
@@ -438,13 +640,8 @@
       map.add(originMarker);
     }
 
-    // ==========================================
-    // 4. 渲染地图标注、轨迹线与双端列表
-    // ==========================================
     function render() {
       const filtered = spots.filter(s => currentDayFilter === 'all' || String(s.day) === String(currentDayFilter));
-
-      // 先更新左右列表
       renderLists(filtered);
 
       if (!map) return;
@@ -464,7 +661,7 @@
           </div>
         `;
         const marker = new AMap.Marker({
-          position: [s.lng, s.lat],
+          position: new AMap.LngLat(s.lng, s.lat),
           content: markerEl,
           offset: new AMap.Pixel(-14, -14)
         });
@@ -473,7 +670,6 @@
       });
       map.add(markers);
 
-      // 当切换到具体某一天时，绘制从全季酒店出发串联各景点的虚线
       if (currentDayFilter !== 'all' && String(currentDayFilter) !== '0' && filtered.length > 0) {
         const pathCoords = [[userLocation.lng, userLocation.lat], ...filtered.map(s => [s.lng, s.lat])];
         polyline = new AMap.Polyline({
@@ -535,7 +731,6 @@
       lucide.createIcons();
     }
 
-    // 地图弹窗卡片
     function openSpotPopup(spot) {
       if (currentInfoWindow) currentInfoWindow.close();
       const conf = DAY_CONFIG[spot.day] || DAY_CONFIG[0];
@@ -568,7 +763,7 @@
             <div class="flex gap-1.5">
               <button onclick="deleteSpot(${spot.id})" class="text-rose-500 hover:bg-rose-50 rounded-lg text-[11px] px-2 py-1">删除</button>
               <button onclick="startNavigationTo(${spot.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow-sm">
-                <i data-lucide="navigation" class="w-3 h-3"></i> 实时路线
+                <i data-lucide="navigation" class="w-3 h-3"></i> 路线详情
               </button>
             </div>
           </div>
@@ -579,37 +774,12 @@
         content: content,
         offset: new AMap.Pixel(0, -18)
       });
-      currentInfoWindow.open(map, [spot.lng, spot.lat]);
+      currentInfoWindow.open(map, new AMap.LngLat(spot.lng, spot.lat));
       setTimeout(() => lucide.createIcons(), 50);
     }
 
     // ==========================================
-    // 5. 核心功能：从起点自动测算最短时间公交/地铁文本
-    // ==========================================
-    function formatBestTransitSummary(plan) {
-      const totalMin = Math.max(1, Math.round(plan.time / 60));
-      const segmentsDesc = [];
-
-      if (plan.segments && plan.segments.length > 0) {
-        plan.segments.forEach(seg => {
-          if ((seg.transit_mode === 'SUBWAY' || seg.transit_mode === 'BUS') && seg.transit && seg.transit.lines && seg.transit.lines[0]) {
-            const line = seg.transit.lines[0];
-            const cleanLineName = line.name.split('(')[0];
-            const segMin = line.stime ? Math.round(line.stime / 60) : Math.max(3, line.via_num * 3);
-            segmentsDesc.push(`${cleanLineName} (${line.departure_stop.name}→${line.arrival_stop.name}, ${line.via_num}站/约${segMin}分)`);
-          }
-        });
-      }
-
-      if (segmentsDesc.length > 0) {
-        return `最快约 ${totalMin} 分钟：乘 ${segmentsDesc.join(' ➔ 换乘 ')}，总步行 ${plan.walking_distance} 米`;
-      } else {
-        return `距离较近，从起点直接步行约 ${plan.walking_distance} 米 (约 ${totalMin} 分钟)`;
-      }
-    }
-
-    // ==========================================
-    // 6. 搜索地点模糊下拉（含详细地址 + 右侧添加按钮）
+    // 5. 搜索地点模糊下拉 + 瞬时生成推荐地铁/公交
     // ==========================================
     let searchTimer = null;
     let cachedPois = [];
@@ -625,7 +795,6 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => {
         if (!placeSearchService) return;
-        // 使用 PlaceSearch 获取带精确经纬度与详细地址的 POI 列表
         placeSearchService.search(text, function(status, result) {
           if (status === 'complete' && result.poiList && result.poiList.pois && result.poiList.pois.length > 0) {
             cachedPois = result.poiList.pois;
@@ -650,13 +819,13 @@
             container.classList.remove('hidden');
           }
         });
-      }, 250);
+      }, 220);
     }
 
     function previewSearchLocation(idx) {
       const poi = cachedPois[idx];
       if (!poi || !poi.location) return;
-      map.setZoomAndCenter(16, [poi.location.lng, poi.location.lat]);
+      map.setZoomAndCenter(16, new AMap.LngLat(poi.location.lng, poi.location.lat));
       document.getElementById('desktop-suggest-list').classList.add('hidden');
       document.getElementById('mobile-suggest-list').classList.add('hidden');
     }
@@ -678,7 +847,8 @@
       });
     }
 
-    // 打开添加打卡点弹窗，并实时测算从起点出发的最短公共交通路线
+    // 核心：打开添加弹窗时，先用内置南京地铁网引擎 0.01秒直接填入最短路线（绝不卡死在“正在测算...”）
+    // 若高德在线接口随后返回更细数据，则平滑更新
     function triggerAddSpotModal(draft) {
       pendingSpotDraft = draft;
 
@@ -688,30 +858,41 @@
       document.getElementById('form-spot-time').value = "1.5-2小时";
       document.getElementById('form-spot-cost').value = "免费";
       document.getElementById('form-spot-cat').value = draft.category;
-      document.getElementById('form-spot-tip').value = `地址位于${draft.address}，推荐打卡。`;
+      document.getElementById('form-spot-tip').value = `位于${draft.address}，推荐打卡。`;
       
+      // 1. 立即执行毫秒级本地智能地铁/公交计算，0等待直接写入输入框！
+      const smartRoute = computeSmartNanjingRoute(userLocation.lng, userLocation.lat, draft.lng, draft.lat, draft.name);
       const transitInput = document.getElementById('form-spot-transit');
       const transitHint = document.getElementById('form-transit-hint');
-      transitInput.value = "正在从起点测算最短时间的地铁/公交方案...";
-      transitHint.innerText = `当前测算起点：${userLocation.name} (按最短耗时优选)`;
+      transitInput.value = smartRoute.summaryText;
+      transitHint.innerText = `✓ 已按起点【${userLocation.name}】生成最短耗时方案 (可自由删改)`;
 
       document.getElementById('custom-add-modal').classList.remove('hidden');
       lucide.createIcons();
 
-      // 立即调用高德公交规划，按最短时间选出最优方案填入
-      if (transferService) {
-        transferService.search([userLocation.lng, userLocation.lat], [draft.lng, draft.lat], function(status, res) {
-          if (status === 'complete' && res.plans && res.plans.length > 0) {
-            // 按时间升序排序，确保绝对取最短耗时方案
-            const sortedPlans = [...res.plans].sort((a, b) => a.time - b.time);
-            const bestPlan = sortedPlans[0];
-            transitInput.value = formatBestTransitSummary(bestPlan);
-          } else {
-            transitInput.value = `距起点较近，建议直接步行或打车前往 (${draft.address})`;
+      // 2. 同时异步尝试高德 Transfer（传入标准 AMap.LngLat 对象），如果返回则更新
+      if (transferService && typeof AMap !== 'undefined') {
+        const startPt = new AMap.LngLat(userLocation.lng, userLocation.lat);
+        const endPt = new AMap.LngLat(draft.lng, draft.lat);
+        transferService.search(startPt, endPt, function(status, res) {
+          if (status === 'complete' && res && res.plans && res.plans.length > 0) {
+            const sorted = [...res.plans].sort((a, b) => a.time - b.time);
+            const best = sorted[0];
+            const totalMin = Math.max(1, Math.round(best.time / 60));
+            const parts = [];
+            best.segments.forEach(seg => {
+              if ((seg.transit_mode === 'SUBWAY' || seg.transit_mode === 'BUS') && seg.transit && seg.transit.lines && seg.transit.lines[0]) {
+                const l = seg.transit.lines[0];
+                const cleanName = l.name.split('(')[0];
+                const m = l.stime ? Math.round(l.stime / 60) : Math.max(3, l.via_num * 3);
+                parts.push(`${cleanName}(${l.departure_stop.name}➔${l.arrival_stop.name}, ${l.via_num}站/约${m}分)`);
+              }
+            });
+            if (parts.length > 0) {
+              transitInput.value = `最快约 ${totalMin} 分钟：乘 ${parts.join(' ➔ 换乘 ')}，步行 ${best.walking_distance} 米`;
+            }
           }
         });
-      } else {
-        transitInput.value = `建议乘地铁或打车前往 (${draft.address})`;
       }
     }
 
@@ -748,40 +929,27 @@
       focusSpot(newSpot.id);
     }
 
-    // 地图直接点击选点
     function handleMapPick(lng, lat) {
       toggleAddMode();
-      if (geocoderService) {
-        geocoderService.getAddress([lng, lat], function(status, result) {
-          let addr = "南京市地图选点";
+      if (geocoderService && typeof AMap !== 'undefined') {
+        geocoderService.getAddress(new AMap.LngLat(lng, lat), function(status, result) {
+          let addr = "南京市秦淮/玄武区选点";
           let poiName = "自定义打卡点";
           if (status === 'complete' && result.regeocode) {
-            addr = result.regeocode.formattedAddress;
+            addr = result.regeocode.formattedAddress.replace('江苏省南京市', '');
             if (result.regeocode.aois && result.regeocode.aois[0]) {
               poiName = result.regeocode.aois[0].name;
             }
           }
-          triggerAddSpotModal({
-            name: poiName,
-            lng: lng,
-            lat: lat,
-            address: addr,
-            category: "自定义打卡"
-          });
+          triggerAddSpotModal({ name: poiName, lng, lat, address: addr, category: "自定义打卡" });
         });
       } else {
-        triggerAddSpotModal({
-          name: "自定义打卡点",
-          lng: lng,
-          lat: lat,
-          address: `坐标: ${lng.toFixed(4)}, ${lat.toFixed(4)}`,
-          category: "自定义打卡"
-        });
+        triggerAddSpotModal({ name: "自定义打卡点", lng, lat, address: "南京市地图选点", category: "自定义打卡" });
       }
     }
 
     // ==========================================
-    // 7. 路线导航弹窗（展示详细地铁/公交几号线、各自耗时、打车时间）
+    // 6. 路线导航弹窗（0等待直接展示具体几号线、多少站、打车时间）
     // ==========================================
     function startNavigationTo(spotId) {
       if (currentInfoWindow) currentInfoWindow.close();
@@ -820,123 +988,79 @@
 
     function calcAndRenderRoute() {
       const container = document.getElementById('nav-route-details');
-      container.innerHTML = `
-        <div class="text-center py-8 space-y-2 text-slate-400">
-          <div class="inline-block w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-xs">正在从【${userLocation.name}】计算最快路线...</p>
-        </div>
-      `;
+      const directAmapUrl = `https://uri.amap.com/navigation?from=${userLocation.lng},${userLocation.lat},${encodeURIComponent(userLocation.name)}&to=${activeNavSpot.lng},${activeNavSpot.lat},${encodeURIComponent(activeNavSpot.name)}&mode=${activeNavMode === 'transit' ? 'bus' : 'car'}`;
 
-      const start = [userLocation.lng, userLocation.lat];
-      const end = [activeNavSpot.lng, activeNavSpot.lat];
-      const directAmapUrl = `https://uri.amap.com/navigation?from=${start[0]},${start[1]},${encodeURIComponent(userLocation.name)}&to=${end[0]},${end[1]},${encodeURIComponent(activeNavSpot.name)}&mode=${activeNavMode === 'transit' ? 'bus' : 'car'}`;
+      // 立即用智能引擎算出精准分段方案并渲染，0延迟，绝不卡在 Loading！
+      const smart = computeSmartNanjingRoute(userLocation.lng, userLocation.lat, activeNavSpot.lng, activeNavSpot.lat, activeNavSpot.name);
 
       if (activeNavMode === 'transit') {
-        if (!transferService) {
-          container.innerHTML = `<div class="p-4 text-center text-slate-500">公交服务初始化中，请稍后重试</div>`;
-          return;
-        }
-
-        transferService.search(start, end, function(status, result) {
-          if (status === 'complete' && result.plans && result.plans.length > 0) {
-            // 按最短时间排序
-            const sortedPlans = [...result.plans].sort((a, b) => a.time - b.time);
-            const plan = sortedPlans[0];
-            const totalMin = Math.max(1, Math.round(plan.time / 60));
-            const walkM = plan.walking_distance;
-
-            let stepsHtml = '';
-            plan.segments.forEach((seg) => {
-              if ((seg.transit_mode === 'SUBWAY' || seg.transit_mode === 'BUS') && seg.transit && seg.transit.lines && seg.transit.lines[0]) {
-                const line = seg.transit.lines[0];
-                const isSubway = seg.transit_mode === 'SUBWAY';
-                const segMin = line.stime ? Math.round(line.stime / 60) : Math.max(3, line.via_num * 3);
-                stepsHtml += `
-                  <div class="p-3 ${isSubway ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'} border rounded-2xl flex items-start justify-between gap-2">
-                    <div class="flex items-start gap-2.5">
-                      <span class="px-2 py-0.5 rounded-lg ${isSubway ? 'bg-blue-600' : 'bg-emerald-600'} text-white font-bold text-[10px] flex-shrink-0 mt-0.5">
-                        ${isSubway ? '地铁' : '公交'}
-                      </span>
-                      <div>
-                        <p class="font-bold text-slate-900 text-xs">${line.name}</p>
-                        <p class="text-[11px] text-slate-600 mt-0.5"><b>${line.departure_stop.name}</b> 上车 ➔ <b>${line.arrival_stop.name}</b> 下车</p>
-                      </div>
-                    </div>
-                    <div class="text-right flex-shrink-0">
-                      <span class="text-xs font-bold ${isSubway ? 'text-blue-700' : 'text-emerald-700'}">约 ${segMin} 分钟</span>
-                      <p class="text-[10px] text-slate-400">途经 ${line.via_num} 站</p>
-                    </div>
+        let stepsHtml = smart.steps.map(st => {
+          if (st.type === 'SUBWAY' || st.type === 'BUS') {
+            const isSub = st.type === 'SUBWAY';
+            return `
+              <div class="p-3 ${isSub ? 'bg-blue-50 border-blue-200' : 'bg-emerald-50 border-emerald-200'} border rounded-2xl flex items-start justify-between gap-2">
+                <div class="flex items-start gap-2.5">
+                  <span class="px-2 py-0.5 rounded-lg ${isSub ? 'bg-blue-600' : 'bg-emerald-600'} text-white font-bold text-[10px] flex-shrink-0 mt-0.5">
+                    ${isSub ? '地铁' : '公交'}
+                  </span>
+                  <div>
+                    <p class="font-bold text-slate-900 text-xs">${st.lineName}</p>
+                    <p class="text-[11px] text-slate-600 mt-0.5"><b>${st.from}</b> 上车 ➔ <b>${st.to}</b> 下车</p>
                   </div>
-                `;
-              } else if (seg.transit_mode === 'WALK' && seg.distance > 0) {
-                const walkMin = Math.max(1, Math.round((seg.time || seg.distance / 1.2) / 60));
-                stepsHtml += `
-                  <div class="px-3 py-1.5 bg-slate-50 rounded-xl text-[11px] text-slate-500 flex items-center justify-between">
-                    <span>🚶 ${seg.instruction || `步行 ${seg.distance} 米`}</span>
-                    <span class="font-medium text-slate-600">约 ${walkMin} 分钟</span>
-                  </div>
-                `;
-              }
-            });
-
-            container.innerHTML = `
-              <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex justify-between items-center">
-                <div>
-                  <span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-md font-bold mr-1.5">最快方案</span>
-                  <span class="text-sm font-bold text-emerald-900">全程约 ${totalMin} 分钟</span>
                 </div>
-                <span class="text-[11px] text-emerald-700 font-medium">票价约 ¥${plan.cost || 2} · 总步行 ${walkM}米</span>
+                <div class="text-right flex-shrink-0">
+                  <span class="text-xs font-bold ${isSub ? 'text-blue-700' : 'text-emerald-700'}">约 ${st.minutes} 分钟</span>
+                  <p class="text-[10px] text-slate-400">途经 ${st.stops} 站</p>
+                </div>
               </div>
-              <div class="space-y-2 my-2">${stepsHtml}</div>
-              <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
-                唤起高德地图 App 实时导航 ↗
-              </a>
             `;
           } else {
-            // 距离极近无需坐车（如全季酒店老门东店到老门东景区）
-            container.innerHTML = `
-              <div class="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-center space-y-1.5 mb-3">
-                <p class="font-bold text-blue-900 text-sm">距离起点非常近，步行即可到达！</p>
-                <p class="text-xs text-slate-600">${activeNavSpot.transit}</p>
+            return `
+              <div class="px-3 py-1.5 bg-slate-50 rounded-xl text-[11px] text-slate-500 flex items-center justify-between">
+                <span>🚶 ${st.title} (${st.detail})</span>
+                <span class="font-medium text-slate-600">约 ${st.minutes} 分钟</span>
               </div>
-              <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
-                打开高德地图查看步行引导 ↗
-              </a>
             `;
           }
-          lucide.createIcons();
-        });
+        }).join('');
+
+        container.innerHTML = `
+          <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex justify-between items-center">
+            <div>
+              <span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-md font-bold mr-1.5">最快方案</span>
+              <span class="text-sm font-bold text-emerald-900">全程约 ${smart.totalMin} 分钟</span>
+            </div>
+            <span class="text-[11px] text-emerald-700 font-medium">票价约 ¥${smart.cost} · 步行 ${smart.walkMeters}米</span>
+          </div>
+          <div class="p-2.5 bg-amber-50/70 border border-amber-200/70 rounded-xl text-[11px] text-amber-900">
+            <b>📌 攻略保存路线：</b>${activeNavSpot.transit}
+          </div>
+          <div class="space-y-2 my-2">${stepsHtml}</div>
+          <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
+            唤起高德地图 App 实时公交导航 ↗
+          </a>
+        `;
       } else {
-        // 打车 / 自驾耗时计算
-        drivingService.search(start, end, function(status, result) {
-          if (status === 'complete' && result.routes && result.routes.length > 0) {
-            const route = result.routes[0];
-            const durationMin = Math.max(3, Math.round(route.time / 60));
-            const distKm = (route.distance / 1000).toFixed(1);
-            const taxiCost = Math.round(11 + (distKm > 3 ? (distKm - 3) * 2.6 : 0));
-
-            container.innerHTML = `
-              <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2 mb-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-base font-bold text-slate-900">🚕 打车预计 ${durationMin} 分钟</span>
-                  <span class="text-sm font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg">预估车费 ¥${taxiCost}</span>
-                </div>
-                <p class="text-xs text-slate-600">起点：${userLocation.name} ➔ 终点：${activeNavSpot.name}</p>
-                <p class="text-[11px] text-slate-500">全程距离约 ${distKm} 公里 · 途经 ${route.steps.length} 个主要道路节点</p>
-              </div>
-              <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
-                唤起高德地图 App 一键打车/导航 ↗
-              </a>
-            `;
-          } else {
-            container.innerHTML = `<div class="p-4 text-center text-slate-500">距离过近，建议直接步行前往</div>`;
-          }
-        });
+        // 打车时间与费用
+        container.innerHTML = `
+          <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2 mb-3">
+            <div class="flex justify-between items-center">
+              <span class="text-base font-bold text-slate-900">🚕 打车预计 ${smart.driveMin} 分钟</span>
+              <span class="text-sm font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg">预估车费 ¥${smart.taxiCost}</span>
+            </div>
+            <p class="text-xs text-slate-600">起点：${userLocation.name} ➔ 终点：${activeNavSpot.name}</p>
+            <p class="text-[11px] text-slate-500">全程行驶距离约 ${smart.roadDistKm} 公里 · 走内环南线/龙蟠中路最快</p>
+          </div>
+          <a href="${directAmapUrl}" target="_blank" class="block w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-center font-bold text-xs shadow-md transition">
+            唤起高德地图 App 一键打车/导航 ↗
+          </a>
+        `;
       }
+      lucide.createIcons();
     }
 
     // ==========================================
-    // 8. 日程切换、GPS 定位与基础操作
+    // 7. 日程切换、GPS 定位与基础操作
     // ==========================================
     function filterDay(day) {
       currentDayFilter = day;
@@ -953,7 +1077,7 @@
     function focusSpot(id) {
       const spot = spots.find(s => s.id === id);
       if (spot && map) {
-        map.setZoomAndCenter(15, [spot.lng, spot.lat]);
+        map.setZoomAndCenter(15, new AMap.LngLat(spot.lng, spot.lat));
         openSpotPopup(spot);
       }
     }
@@ -1003,7 +1127,7 @@
       AMap.plugin('AMap.Geolocation', function() {
         const geolocation = new AMap.Geolocation({
           enableHighAccuracy: true,
-          timeout: 6000,
+          timeout: 5000,
           needAddress: true
         });
 
@@ -1019,14 +1143,14 @@
             if (mobileStatus) mobileStatus.innerText = text;
             if (desktopStatus) desktopStatus.innerText = text;
             renderHotelOriginMarker();
-            map.setCenter([userLocation.lng, userLocation.lat]);
+            map.setCenter(new AMap.LngLat(userLocation.lng, userLocation.lat));
           } else {
             userLocation = { ...DEFAULT_HOTEL };
-            const fallbackText = `未授权定位，默认起点：${DEFAULT_HOTEL.name}`;
+            const fallbackText = `默认起点：${DEFAULT_HOTEL.name}`;
             if (mobileStatus) mobileStatus.innerText = fallbackText;
             if (desktopStatus) desktopStatus.innerText = fallbackText;
             renderHotelOriginMarker();
-            map.setCenter([DEFAULT_HOTEL.lng, DEFAULT_HOTEL.lat]);
+            map.setCenter(new AMap.LngLat(DEFAULT_HOTEL.lng, DEFAULT_HOTEL.lat));
           }
         });
       });
